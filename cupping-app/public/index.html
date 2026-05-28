@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Driva Cupping App</title>
+
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Firebase Compat SDK — no modules, works everywhere -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDTpyu1hpt_91hUXGkJFnVX_Dhz10ykysc",
+    authDomain:        "driva-data.firebaseapp.com",
+    databaseURL:       "https://driva-data-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "driva-data",
+    storageBucket:     "driva-data.firebasestorage.app",
+    messagingSenderId: "634199541440",
+    appId:             "1:634199541440:web:b1f0169b84aa2ce77a4f25",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const _db   = firebase.database();
+  const _auth = firebase.auth();
+
+  window._firebaseReady = false;
+  window._firebaseUid   = null;
+  window._authError     = null;
+
+  // Compat-style helpers that match the modular API shape used in the app
+  window._db     = _db;
+  window._ref    = (db, path) => db.ref(path);
+  window._push   = (ref) => ref.push();
+  window._set    = (ref, data) => ref.set(data);
+  window._onValue = (ref, cb, errCb) => ref.on('value', cb, errCb);
+  window._remove = (ref) => ref.remove();
+
+  _auth.signInAnonymously()
+    .then(credential => {
+      window._firebaseUid   = credential.user.uid;
+      window._firebaseReady = true;
+      window._authError     = null;
+      console.log('[Driva] Auth OK uid:', credential.user.uid);
+      document.dispatchEvent(new Event('firebase-ready'));
+    })
+    .catch(err => {
+      window._authError     = err.code;
+      window._firebaseReady = false;
+      console.error('[Driva] Auth FAILED:', err.code, err.message);
+      document.dispatchEvent(new Event('firebase-ready'));
+    });
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --bg: #0d0f0a;
+  --bg2: #131610;
+  --bg3: #1a1e14;
+  --bg4: #212619;
+  --surface: #1e2318;
+  --surface2: #252b1c;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --accent: #b8d43a;
+  --accent2: #8aaa1c;
+  --accent-dim: rgba(184,212,58,0.15);
+  --text: #e8ead8;
+  --text2: #9ba08a;
+  --text3: #6a7060;
+  --danger: #d4614a;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --r: 16px; --r2: 12px; --r3: 8px;
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow: hidden; }
+
+#app {
+  width: 100%; max-width: 430px;
+  height: 100vh; /* fallback */
+  height: 100dvh; /* iOS Safari/Chrome: excludes browser chrome */
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── SCREENS ── */
+:root { --nav-h: 56px; }
+.screen {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  /* bottom stops at nav bar — never goes behind it */
+  bottom: var(--nav-h);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateX(30px);
+  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+}
+.screen.active { opacity: 1; pointer-events: all; transform: translateX(0); z-index: 10; }
+.screen.slide-back { transform: translateX(-30px); }
+.screen::-webkit-scrollbar { width: 3px; }
+.screen::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── SPLASH ── */
+#splash {
+  align-items: center; justify-content: center;
+  padding: 40px 32px; text-align: center;
+  background: radial-gradient(ellipse 60% 40% at 50% 30%, rgba(184,212,58,0.08) 0%, transparent 70%), var(--bg);
+}
+.splash-coffee-art { width: 160px; height: 160px; margin-bottom: 24px; }
+.splash-logo-svg { width: 200px; height: auto; margin-bottom: 6px; }
+.splash-sub { font-size: 12px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+.splash-tagline { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 40px; }
+.splash-tagline span { display: block; }
+.splash-cta {
+  display: flex; align-items: center; gap: 12px; justify-content: center;
+  background: var(--accent); color: #0d0f0a; border: none; border-radius: 100px;
+  padding: 16px 32px; font-family: var(--font-body); font-size: 16px; font-weight: 600;
+  cursor: pointer; min-width: 220px;
+  box-shadow: 0 8px 32px rgba(184,212,58,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.splash-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(184,212,58,0.4); }
+.cta-arrow { width: 28px; height: 28px; background: rgba(0,0,0,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+/* ── COMMON HEADER ── */
+.nav-header {
+  padding: 52px 24px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.nav-title { font-size: 17px; font-weight: 500; }
+.nav-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.nav-title-group { text-align: center; flex: 1; }
+.icon-btn {
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 50%;
+  cursor: pointer; color: var(--text2); transition: all 0.15s; flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--surface2); color: var(--text); }
+.icon-btn.ghost { background: none; border-color: transparent; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: relative;
+  width: 100%;
+  background: var(--bg2); border-top: 1px solid var(--border);
+  display: none; /* hidden on splash, shown after first navigation */
+  z-index: 50;
+  flex-shrink: 0;
+  height: var(--nav-h);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-nav.visible {
+  display: flex;
+}
+.nav-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 8px; cursor: pointer; color: var(--text3);
+  font-size: 10px; font-weight: 500; letter-spacing: 0.04em;
+  border: none; background: none; font-family: var(--font-body);
+  transition: color 0.2s;
+}
+.nav-tab svg { width: 20px; height: 20px; }
+.nav-tab.active { color: var(--accent); }
+.nav-tab-dot { width: 4px; height: 4px; border-radius: 2px; background: var(--accent); margin-top: 2px; display: none; }
+.nav-tab.active .nav-tab-dot { display: block; }
+
+/* has-nav: no longer needed — screens stop at nav bar via bottom:var(--nav-h) */
+.has-nav { padding-bottom: 0; }
+
+/* ── PROCESS SCREEN ── */
+.carousel-track-wrapper { flex: 1; overflow: hidden; padding: 16px 0 8px; }
+.carousel-track {
+  display: flex; gap: 12px; padding: 0 24px;
+  transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+  align-items: center; height: 100%;
+}
+.process-card {
+  flex-shrink: 0; width: 155px; height: 270px; border-radius: 18px;
+  border: 1px solid var(--border); background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  padding: 20px 14px 14px; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;
+}
+.process-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(184,212,58,0.06) 0%, transparent 60%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.process-card.active-card {
+  width: 175px; height: 300px;
+  background: linear-gradient(160deg, #1e2a10 0%, #151a0e 100%);
+  border-color: var(--accent);
+  box-shadow: 0 20px 60px rgba(184,212,58,0.18), 0 0 0 1px rgba(184,212,58,0.2);
+}
+.process-card.active-card::before { opacity: 1; }
+.card-icon { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; }
+.card-icon svg { width: 88px; height: 88px; }
+.card-label { text-align: center; font-size: 12px; font-weight: 500; color: var(--text2); line-height: 1.4; }
+.process-card.active-card .card-label { color: var(--text); }
+.card-desc-area {
+  width: calc(100% + 28px); margin: 0 -14px;
+  padding: 12px 14px; background: var(--surface2);
+  border-top: 1px solid var(--border); border-radius: 0 0 18px 18px;
+  opacity: 0; transition: opacity 0.3s;
+}
+.process-card.active-card .card-desc-area { opacity: 1; }
+.card-desc-title { font-size: 10px; font-weight: 600; color: var(--text); letter-spacing: 0.08em; text-transform: uppercase; }
+.card-desc-text { font-size: 10px; color: var(--text3); line-height: 1.5; margin-top: 2px; }
+
+.carousel-dots { display: flex; gap: 6px; justify-content: center; padding: 10px 0 14px; flex-shrink: 0; }
+.dot { width: 6px; height: 6px; border-radius: 3px; background: var(--border2); transition: all 0.3s; cursor: pointer; }
+.dot.active { width: 20px; background: var(--accent); }
+
+.process-start-area { padding: 0 24px 16px; flex-shrink: 0; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+  background: var(--accent); color: #0d0f0a; border: none; border-radius: 100px;
+  padding: 15px 24px; font-family: var(--font-body); font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; box-shadow: 0 6px 24px rgba(184,212,58,0.25);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(184,212,58,0.35); }
+.btn-outline {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  border: 1px solid var(--border2); border-radius: 100px;
+  padding: 14px 24px; font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  color: var(--text); background: none; cursor: pointer; transition: all 0.15s;
+}
+.btn-outline:hover { background: var(--surface); }
+
+/* ── FORM ── */
+.form-body { flex: 1; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 18px; }
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+.text-input {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3);
+  padding: 12px 14px; font-family: var(--font-body); font-size: 14px; color: var(--text);
+  width: 100%; outline: none; transition: border-color 0.2s;
+}
+.text-input::placeholder { color: var(--text3); }
+.text-input:focus { border-color: rgba(184,212,58,0.4); background: var(--surface2); }
+
+.score-rows { display: flex; flex-direction: column; gap: 4px; }
+.score-row {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3);
+  padding: 11px 14px; display: flex; align-items: center; gap: 10px;
+}
+.score-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--text3); }
+.score-name { flex: 1; font-size: 13px; color: var(--text2); }
+.score-slider-wrap { flex: 1.5; }
+.score-slider {
+  -webkit-appearance: none; width: 100%; height: 3px; border-radius: 2px; outline: none; cursor: pointer;
+}
+.score-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 6px rgba(184,212,58,0.4); cursor: pointer;
+}
+.score-slider::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--accent); border: none; }
+.score-val { min-width: 34px; text-align: right; font-size: 13px; font-weight: 600; color: var(--accent); }
+
+.toggle-group { display: flex; gap: 6px; }
+.toggle-btn {
+  flex: 1; padding: 8px 4px; border: 1px solid var(--border); border-radius: var(--r3);
+  background: var(--surface); color: var(--text2); font-family: var(--font-body);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.toggle-btn.active { background: var(--accent); border-color: var(--accent); color: #0d0f0a; font-weight: 600; }
+.toggle-btn.active-red { background: #d4614a22; border-color: var(--danger); color: var(--danger); }
+
+.chip-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.flavor-chip {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 100px;
+  background: var(--surface); color: var(--text2); font-family: var(--font-body);
+  font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.flavor-chip.active { background: var(--accent-dim); border-color: rgba(184,212,58,0.5); color: var(--accent); }
+
+.notes-input {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3);
+  padding: 12px 14px; font-family: var(--font-body); font-size: 13px; color: var(--text);
+  width: 100%; min-height: 80px; resize: none; outline: none; transition: border-color 0.2s;
+}
+.notes-input::placeholder { color: var(--text3); }
+.notes-input:focus { border-color: rgba(184,212,58,0.4); background: var(--surface2); }
+
+.save-bar {
+  padding: 14px 24px 20px; flex-shrink: 0; background: var(--bg); border-top: 1px solid var(--border);
+  /* No extra padding needed — has-nav on parent handles the offset */
+}
+
+.section-divider { display: flex; align-items: center; gap: 10px; margin: 2px 0; }
+.section-divider-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+  z-index: 9999; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 24px;
+  padding: 32px 26px 26px; width: calc(100% - 64px); max-width: 340px; text-align: center;
+  transform: scale(0.92) translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+.modal-icon {
+  width: 68px; height: 68px; background: var(--accent-dim); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 2px;
+}
+.modal-title { font-family: var(--font-display); font-size: 21px; color: var(--text); font-weight: 700; }
+.modal-sub { font-size: 13px; color: var(--text3); line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; width: 100%; margin-top: 6px; }
+.btn-cancel {
+  flex: 1; padding: 13px; border: 1px solid var(--border2); border-radius: 100px;
+  background: none; color: var(--text2); font-family: var(--font-body); font-size: 14px;
+  font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.btn-cancel:hover { background: var(--surface2); }
+.btn-done {
+  flex: 1.5; padding: 13px; border: none; border-radius: 100px;
+  background: var(--accent); color: #0d0f0a; font-family: var(--font-body);
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s;
+}
+
+/* ── RESULTS ── */
+.results-body { flex: 1; padding: 0 24px 24px; display: flex; flex-direction: column; gap: 16px; }
+.score-hero {
+  background: linear-gradient(135deg, #1e2a10 0%, #151a0e 100%);
+  border: 1px solid rgba(184,212,58,0.25); border-radius: 20px;
+  padding: 22px 18px; display: flex; align-items: center; gap: 14px;
+}
+.score-hero-icon {
+  width: 52px; height: 52px; background: var(--accent-dim); border-radius: 13px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.score-hero-info { flex: 1; }
+.score-hero-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text); }
+.score-hero-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.score-hero-number { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--accent); line-height: 1; }
+.score-hero-label { font-size: 10px; color: var(--text3); text-align: right; }
+
+.radar-wrap {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.radar-title { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; align-self: flex-start; }
+
+.notes-section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+  padding: 18px; display: flex; flex-direction: column; gap: 10px;
+}
+.notes-section-title { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+.meta-row { display: flex; gap: 10px; }
+.meta-pill {
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+  background: var(--bg4); border-radius: 100px; font-size: 11px; color: var(--text2); flex: 1;
+  overflow: hidden;
+}
+.meta-pill svg { width: 13px; height: 13px; color: var(--text3); flex-shrink: 0; }
+.meta-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-notes {
+  font-size: 13px; color: var(--text2); line-height: 1.7; font-style: italic;
+  padding: 11px; background: var(--bg4); border-radius: var(--r3);
+}
+
+/* ── HISTORY SCREEN ── */
+.history-body { flex: 1; padding: 0 24px 24px; display: flex; flex-direction: column; gap: 12px; }
+.history-empty {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; color: var(--text3); font-size: 14px; padding: 40px 24px; text-align: center;
+}
+.history-empty svg { width: 48px; height: 48px; color: var(--border2); margin-bottom: 4px; }
+
+.history-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 16px 18px; cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.history-card:hover { border-color: var(--border2); background: var(--surface2); }
+
+.history-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.history-card-name { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.history-card-process { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.history-score-badge {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--accent);
+  line-height: 1; flex-shrink: 0;
+}
+.history-score-label { font-size: 10px; color: var(--text3); text-align: right; margin-top: 1px; }
+
+.history-card-meta { display: flex; align-items: center; gap: 12px; }
+.history-meta-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); }
+.history-meta-item svg { width: 12px; height: 12px; }
+
+.history-card-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.history-chip {
+  padding: 3px 10px; border-radius: 100px; border: 1px solid var(--border);
+  font-size: 11px; color: var(--text3); background: var(--bg4);
+}
+
+.history-card-actions {
+  display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px;
+}
+.history-action-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px; border-radius: var(--r3); font-family: var(--font-body);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none;
+}
+.history-action-btn.export { background: var(--accent-dim); color: var(--accent); }
+.history-action-btn.export:hover { background: rgba(184,212,58,0.25); }
+.history-action-btn.delete { background: rgba(212,97,74,0.1); color: var(--danger); }
+.history-action-btn.delete:hover { background: rgba(212,97,74,0.2); }
+
+.history-filter-row {
+  display: flex; gap: 8px; padding: 14px 24px 0; flex-shrink: 0; overflow-x: auto;
+  -ms-overflow-style: none; scrollbar-width: none;
+}
+.history-filter-row::-webkit-scrollbar { display: none; }
+.filter-chip {
+  padding: 7px 14px; border-radius: 100px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text2); font-family: var(--font-body);
+  font-size: 12px; white-space: nowrap; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.filter-chip.active { background: var(--accent-dim); border-color: rgba(184,212,58,0.5); color: var(--accent); }
+
+.history-stats-row {
+  display: flex; gap: 10px; padding: 0 24px; flex-shrink: 0;
+}
+.stat-card {
+  flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.stat-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--text3); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+  padding: 11px 20px; border-radius: 100px; font-size: 13px; font-weight: 500;
+  z-index: 200; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  opacity: 0; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+.spinner {
+  width: 17px; height: 17px; border: 2px solid rgba(13,15,10,0.3); border-top-color: #0d0f0a;
+  border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+}
+.loading .spinner { display: block; }
+.loading .btn-label { display: none; }
+.loading svg.done-check { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* info row */
+.process-info-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; margin: 0 24px 10px;
+  flex-shrink: 0;
+}
+.process-info-row svg { color: var(--accent); }
+.pir-label { font-size: 11px; font-weight: 600; color: var(--text); letter-spacing: 0.06em; text-transform: uppercase; }
+.pir-desc { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+
+/* ── OWNER MODE ── */
+.owner-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg, #d4a843, #c47a3a);
+  color: #0d0f0a; font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* PIN screen */
+#pin-screen {
+  background: radial-gradient(ellipse 60% 40% at 50% 30%, rgba(184,212,58,0.06) 0%, transparent 70%), var(--bg);
+  align-items: center; justify-content: center; gap: 0; padding: 40px 32px; text-align: center;
+}
+.pin-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.pin-sub { font-size: 13px; color: var(--text3); margin-bottom: 36px; }
+.pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 36px; }
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border2); background: transparent;
+  transition: all 0.2s;
+}
+.pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(184,212,58,0.5); }
+.pin-dot.error { background: var(--danger); border-color: var(--danger); }
+.pin-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; width: 100%; max-width: 280px; margin: 0 auto 24px;
+}
+.pin-key {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: all 0.12s; user-select: none;
+}
+.pin-key:active, .pin-key.pressed { background: var(--surface2); border-color: var(--accent); transform: scale(0.94); }
+.pin-key.del { font-size: 16px; color: var(--text3); }
+.pin-key.zero { grid-column: 2; }
+.pin-back-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--text3);
+  font-family: var(--font-body); font-size: 13px; cursor: pointer;
+  margin-top: 8px; padding: 8px;
+}
+.pin-back-btn:hover { color: var(--text2); }
+
+/* Owner screen */
+#owner-screen { display: flex; flex-direction: column; }
+.owner-header-badge {
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* Edit modal */
+#editModal .modal-box { max-height: 80vh; overflow-y: auto; gap: 14px; text-align: left; padding: 28px 22px; }
+#editModal .modal-box::-webkit-scrollbar { width: 3px; }
+#editModal .modal-box::-webkit-scrollbar-thumb { background: var(--border2); }
+.edit-field { display: flex; flex-direction: column; gap: 6px; }
+.edit-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+.edit-row { display: flex; gap: 8px; }
+.edit-score-label { font-size: 13px; color: var(--text2); min-width: 130px; padding-top: 10px; }
+
+/* Owner tab hidden by default */
+#navOwner { display: none; }
+#navOwner.owner-visible { display: flex; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══ SPLASH ═══════════════════════════════════════ -->
+<div id="splash" class="screen active">
+  <div class="splash-coffee-art">
+    <svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+      <path d="M40 100 L52 148 Q55 160 90 160 Q125 160 128 148 L140 100 Z" fill="none" stroke="#b8d43a" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M140 110 Q162 110 162 127 Q162 144 140 144" fill="none" stroke="#b8d43a" stroke-width="1.5"/>
+      <ellipse cx="90" cy="162" rx="60" ry="8" fill="none" stroke="#b8d43a" stroke-width="1.2"/>
+      <ellipse cx="90" cy="102" rx="48" ry="8" fill="rgba(184,212,58,0.08)" stroke="rgba(184,212,58,0.3)" stroke-width="1"/>
+      <path d="M78 102 Q90 97 102 102" stroke="rgba(184,212,58,0.4)" stroke-width="1" fill="none"/>
+      <path d="M90 95 L90 45" stroke="#b8d43a" stroke-width="1.2"/>
+      <path d="M90 75 Q108 65 118 50" stroke="#b8d43a" stroke-width="1.2" fill="none"/>
+      <ellipse cx="112" cy="56" rx="14" ry="8" fill="none" stroke="#b8d43a" stroke-width="1" transform="rotate(-30 112 56)"/>
+      <path d="M90 60 Q72 48 62 35" stroke="#b8d43a" stroke-width="1.2" fill="none"/>
+      <ellipse cx="68" cy="40" rx="14" ry="8" fill="none" stroke="#b8d43a" stroke-width="1" transform="rotate(30 68 40)"/>
+      <circle cx="90" cy="55" r="5" fill="none" stroke="#b8d43a" stroke-width="1.2"/>
+    </svg>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:12px;">
+    <svg viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" class="splash-logo-svg">
+      <g transform="translate(170,0)">
+        <line x1="0" y1="78" x2="0" y2="25" stroke="#e8ead8" stroke-width="1.8"/>
+        <path d="M0 25 Q-8 8 0 2 Q8 8 0 25Z" fill="none" stroke="#e8ead8" stroke-width="1.2"/>
+        <path d="M0 45 Q-22 35 -28 22 Q-15 20 0 45Z" fill="none" stroke="#e8ead8" stroke-width="1.2"/>
+        <path d="M0 42 Q22 32 28 19 Q15 17 0 42Z" fill="none" stroke="#e8ead8" stroke-width="1.2"/>
+        <path d="M0 58 Q-18 50 -22 40 Q-10 40 0 58Z" fill="none" stroke="#e8ead8" stroke-width="1.1"/>
+        <path d="M0 56 Q18 48 22 37 Q10 37 0 56Z" fill="none" stroke="#e8ead8" stroke-width="1.1"/>
+        <circle cx="-3" cy="65" r="4" fill="none" stroke="#e8ead8" stroke-width="1.2"/>
+        <circle cx="4" cy="68" r="3.5" fill="none" stroke="#e8ead8" stroke-width="1.2"/>
+      </g>
+      <text x="22" y="160" font-family="Georgia,serif" font-size="80" font-weight="700" fill="#e8ead8" letter-spacing="-2">DR</text>
+      <text x="196" y="160" font-family="Georgia,serif" font-size="80" font-weight="700" fill="#e8ead8" letter-spacing="-2">VA</text>
+    </svg>
+    <p class="splash-sub">Cupping App</p>
+  </div>
+  <p class="splash-tagline"><span>Cupping. Understand.</span><span>Craft exceptional coffee.</span></p>
+  <button class="splash-cta" onclick="showScreen('process-screen');showNav();">
+    <span>Start Cupping</span>
+    <span class="cta-arrow">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="#0d0f0a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+  </button>
+</div>
+
+<!-- ═══ PIN SCREEN ════════════════════════════════════ -->
+<div id="pin-screen" class="screen">
+  <div style="width:56px;height:56px;background:linear-gradient(135deg,#d4a843,#c47a3a);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0d0f0a" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+  </div>
+  <div class="pin-title">Owner Access</div>
+  <div class="pin-sub">Enter your PIN to continue</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+    <div class="pin-dot" id="pd4"></div>
+    <div class="pin-dot" id="pd5"></div>
+  </div>
+  <div class="pin-grid">
+    <div class="pin-key" onclick="pinPress('1')">1</div>
+    <div class="pin-key" onclick="pinPress('2')">2</div>
+    <div class="pin-key" onclick="pinPress('3')">3</div>
+    <div class="pin-key" onclick="pinPress('4')">4</div>
+    <div class="pin-key" onclick="pinPress('5')">5</div>
+    <div class="pin-key" onclick="pinPress('6')">6</div>
+    <div class="pin-key" onclick="pinPress('7')">7</div>
+    <div class="pin-key" onclick="pinPress('8')">8</div>
+    <div class="pin-key" onclick="pinPress('9')">9</div>
+    <div class="pin-key del" onclick="pinDel()">⌫</div>
+    <div class="pin-key zero" onclick="pinPress('0')">0</div>
+  </div>
+  <button class="pin-back-btn" onclick="showScreen('process-screen',true)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back
+  </button>
+</div>
+
+<!-- ═══ PROCESS SCREEN ══════════════════════════════════ -->
+<div id="process-screen" class="screen">
+  <div class="nav-header">
+    <div style="width:36px;"></div>
+    <div class="nav-title-group">
+      <div class="nav-title">Select Process</div>
+      <div class="nav-sub">Choose the process of the sample.</div>
+    </div>
+    <button class="icon-btn ghost" onclick="showScreen('pin-screen')" title="Owner Access">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="carousel-track-wrapper" id="carouselWrapper">
+    <div class="carousel-track" id="carouselTrack"></div>
+  </div>
+  <div class="carousel-dots" id="carouselDots"></div>
+
+  <div class="process-info-row" id="processInfoRow">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>
+    </svg>
+    <div>
+      <div class="pir-label" id="pirLabel">ABOUT DUAL PHASE</div>
+      <div class="pir-desc" id="pirDesc">Two-stage fermentation with wash, for clarity and balance.</div>
+    </div>
+  </div>
+
+  <div class="process-start-area">
+    <button class="btn-primary" onclick="goToCuppingForm()">
+      <span>Start Cupping</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#0d0f0a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ CUPPING FORM ═══════════════════════════════════ -->
+<div id="form-screen" class="screen has-nav">
+  <div class="nav-header">
+    <button class="icon-btn" onclick="showScreen('process-screen',true)">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="nav-title-group"><div class="nav-title">Cupping Form</div></div>
+    <div style="width:36px;"></div>
+  </div>
+
+  <div class="form-body">
+    <div class="field-group">
+      <label class="field-label">Cupper Name</label>
+      <div style="position:relative;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;">
+          <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+        <input id="cupperName" type="text" class="text-input" placeholder="Alex Barista" style="padding-left:37px;">
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Sample Code</label>
+      <input id="sampleCode" type="text" class="text-input" placeholder="e.g. DRV-2024-001">
+    </div>
+
+    <div class="section-divider"><div class="section-divider-line"></div><span class="section-divider-label">Scores</span><div class="section-divider-line"></div></div>
+    <div class="score-rows" id="scoreRows"></div>
+
+    <div class="section-divider"><div class="section-divider-line"></div><span class="section-divider-label">Evaluation</span><div class="section-divider-line"></div></div>
+
+    <div class="field-group">
+      <label class="field-label">Sweetness</label>
+      <div class="toggle-group" id="sweetnessGroup">
+        <button class="toggle-btn" data-val="Low" onclick="setToggle('sweetnessGroup',this)">Low</button>
+        <button class="toggle-btn active" data-val="Med" onclick="setToggle('sweetnessGroup',this)">Med</button>
+        <button class="toggle-btn" data-val="High" onclick="setToggle('sweetnessGroup',this)">High</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Clean Cup</label>
+      <div class="toggle-group" id="cleanCupGroup">
+        <button class="toggle-btn active" data-val="Yes" onclick="setToggle('cleanCupGroup',this)">Yes</button>
+        <button class="toggle-btn" data-val="No" onclick="setToggle('cleanCupGroup',this)">No</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Defects</label>
+      <div class="toggle-group" id="defectsGroup">
+        <button class="toggle-btn active" data-val="None" onclick="setToggleDefects(this)">None</button>
+        <button class="toggle-btn" data-val="Low" onclick="setToggleDefects(this)">Low</button>
+        <button class="toggle-btn" data-val="High" onclick="setToggleDefects(this)">High</button>
+      </div>
+    </div>
+
+    <div class="section-divider"><div class="section-divider-line"></div><span class="section-divider-label">Flavor Notes</span><div class="section-divider-line"></div></div>
+    <div class="field-group">
+      <label class="field-label">Flavor Intensity</label>
+      <div class="chip-grid" id="flavorChips"></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Tasting Notes</label>
+      <textarea id="tastingNotes" class="notes-input" placeholder="Add your tasting notes…"></textarea>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <button class="btn-primary" onclick="openModal()">
+      <span class="btn-label">Save</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d0f0a" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ RESULTS SCREEN ══════════════════════════════════ -->
+<div id="results-screen" class="screen has-nav">
+  <div class="nav-header">
+    <button class="icon-btn" onclick="showScreen('process-screen',true)">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="nav-title-group"><div class="nav-title">Cupping Results</div></div>
+    <button class="icon-btn" onclick="exportCurrentPDF()" title="Export PDF">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 15V3m0 12l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="results-body">
+    <div class="score-hero">
+      <div class="score-hero-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>
+        </svg>
+      </div>
+      <div class="score-hero-info">
+        <div class="score-hero-name" id="resultProcessName">Indragiri Dual Phase</div>
+        <div class="score-hero-meta" id="resultMeta">—</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="score-hero-number" id="resultFinalScore">—</div>
+        <div class="score-hero-label">Final Score</div>
+      </div>
+    </div>
+
+    <div class="radar-wrap">
+      <div class="radar-title">Flavor Spectrum</div>
+      <canvas id="radarChart" width="290" height="290" style="max-width:100%;"></canvas>
+    </div>
+
+    <div class="notes-section">
+      <div class="notes-section-title">Tasting Notes</div>
+      <div class="chip-grid" id="resultFlavors"></div>
+      <div class="result-notes" id="resultNotes" style="display:none;"></div>
+    </div>
+
+    <div class="meta-row">
+      <div class="meta-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3 6.5L22 10l-5 4.5 1.2 7-6.2-3.5L5.8 21.5 7 14.5 2 10l7-1.5z"/></svg>
+        <span id="resultScore2">—</span>
+      </div>
+      <div class="meta-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span id="resultCupper2">—</span>
+      </div>
+      <div class="meta-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span id="resultDate2">—</span>
+      </div>
+    </div>
+
+    <button class="btn-outline" onclick="showScreen('process-screen',true)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+      New Cupping Session
+    </button>
+  </div>
+</div>
+
+<!-- ═══ OWNER SCREEN ════════════════════════════════════ -->
+<div id="owner-screen" class="screen has-nav">
+  <div class="nav-header">
+    <div style="width:36px;"></div>
+    <div class="nav-title-group">
+      <div class="nav-title" style="display:flex;align-items:center;gap:8px;">
+        Owner
+        <span class="owner-badge">Admin</span>
+      </div>
+      <div class="nav-sub" id="ownerCount">All sessions</div>
+    </div>
+    <button class="icon-btn" onclick="ownerSignOut()" title="Sign out" style="color:var(--danger);">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="history-stats-row" id="ownerStats" style="display:none;">
+    <div class="stat-card"><div class="stat-value" id="ownerStatTotal">0</div><div class="stat-label">Sessions</div></div>
+    <div class="stat-card"><div class="stat-value" id="ownerStatAvg">—</div><div class="stat-label">Avg Score</div></div>
+    <div class="stat-card"><div class="stat-value" id="ownerStatBest">—</div><div class="stat-label">Best Score</div></div>
+  </div>
+
+  <!-- Filter -->
+  <div class="history-filter-row">
+    <div class="filter-chip active" data-filter="all" onclick="ownerFilter('all',this)">All</div>
+    <div class="filter-chip" data-filter="classic-washed" onclick="ownerFilter('classic-washed',this)">Classic Washed</div>
+    <div class="filter-chip" data-filter="dual-phase" onclick="ownerFilter('dual-phase',this)">Dual Phase</div>
+    <div class="filter-chip" data-filter="thermal-shock" onclick="ownerFilter('thermal-shock',this)">Thermal Shock</div>
+    <div class="filter-chip" data-filter="slow-dried" onclick="ownerFilter('slow-dried',this)">Slow Dried</div>
+    <div class="filter-chip" data-filter="lalvin-yeast" onclick="ownerFilter('lalvin-yeast',this)">Lalvin Yeast</div>
+  </div>
+
+  <div class="history-body" id="ownerBody">
+    <div class="history-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+      <div>Loading all sessions…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HISTORY SCREEN ══════════════════════════════════ -->
+<div id="history-screen" class="screen has-nav">
+  <div class="nav-header">
+    <div style="width:36px;"></div>
+    <div class="nav-title-group">
+      <div class="nav-title">History</div>
+      <div class="nav-sub" id="historyCount">Loading…</div>
+    </div>
+    <button class="icon-btn" onclick="loadHistory()" title="Refresh">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M1 4v6h6M23 20v-6h-6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Stats row -->
+  <div class="history-stats-row" id="historyStats" style="display:none;">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Total Sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAvg">—</div>
+      <div class="stat-label">Avg Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statBest">—</div>
+      <div class="stat-label">Best Score</div>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="history-filter-row" id="historyFilters">
+    <div class="filter-chip active" data-filter="all" onclick="filterHistory('all',this)">All</div>
+    <div class="filter-chip" data-filter="classic-washed" onclick="filterHistory('classic-washed',this)">Classic Washed</div>
+    <div class="filter-chip" data-filter="dual-phase" onclick="filterHistory('dual-phase',this)">Dual Phase</div>
+    <div class="filter-chip" data-filter="thermal-shock" onclick="filterHistory('thermal-shock',this)">Thermal Shock</div>
+    <div class="filter-chip" data-filter="slow-dried" onclick="filterHistory('slow-dried',this)">Slow Dried</div>
+    <div class="filter-chip" data-filter="lalvin-yeast" onclick="filterHistory('lalvin-yeast',this)">Lalvin Yeast</div>
+  </div>
+
+  <div class="history-body" id="historyBody">
+    <div class="history-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+      <div>Loading sessions…</div>
+    </div>
+  </div>
+</div>
+
+  <!-- Bottom Nav — inside #app so it participates in flex column layout -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-tab active" id="navCup" onclick="navTo('process-screen','navCup')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+      <span>Cup</span>
+      <div class="nav-tab-dot"></div>
+    </button>
+    <button class="nav-tab" id="navHistory" onclick="navTo('history-screen','navHistory');loadHistory();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
+      <span>History</span>
+      <div class="nav-tab-dot"></div>
+    </button>
+    <button class="nav-tab" id="navOwner" onclick="navTo('owner-screen','navOwner');renderOwnerCards(allHistory);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <span>Owner</span>
+      <div class="nav-tab-dot"></div>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:4px;">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);">Edit Session</div>
+      <button onclick="closeEditModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <input type="hidden" id="editKey">
+    <div class="edit-field"><label class="edit-label">Cupper Name</label><input id="editCupperName" type="text" class="text-input"></div>
+    <div class="edit-field"><label class="edit-label">Sample Code</label><input id="editSampleCode" type="text" class="text-input"></div>
+    <div class="edit-field"><label class="edit-label">Scores</label>
+      <div id="editScores" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+    <div class="edit-field"><label class="edit-label">Sweetness</label>
+      <div class="toggle-group" id="editSweetnessGroup">
+        <button class="toggle-btn" data-val="Low" onclick="setToggle('editSweetnessGroup',this)">Low</button>
+        <button class="toggle-btn active" data-val="Med" onclick="setToggle('editSweetnessGroup',this)">Med</button>
+        <button class="toggle-btn" data-val="High" onclick="setToggle('editSweetnessGroup',this)">High</button>
+      </div>
+    </div>
+    <div class="edit-field"><label class="edit-label">Clean Cup</label>
+      <div class="toggle-group" id="editCleanCupGroup">
+        <button class="toggle-btn active" data-val="Yes" onclick="setToggle('editCleanCupGroup',this)">Yes</button>
+        <button class="toggle-btn" data-val="No" onclick="setToggle('editCleanCupGroup',this)">No</button>
+      </div>
+    </div>
+    <div class="edit-field"><label class="edit-label">Defects</label>
+      <div class="toggle-group" id="editDefectsGroup">
+        <button class="toggle-btn active" data-val="None" onclick="setToggleDefects2(this)">None</button>
+        <button class="toggle-btn" data-val="Low" onclick="setToggleDefects2(this)">Low</button>
+        <button class="toggle-btn" data-val="High" onclick="setToggleDefects2(this)">High</button>
+      </div>
+    </div>
+    <div class="edit-field"><label class="edit-label">Tasting Notes</label>
+      <textarea id="editNotes" class="notes-input"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;width:100%;margin-top:4px;">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-done" onclick="saveEdit()">
+        <span>Save Changes</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="doneModal">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="modal-title">Cancel or Done</div>
+    <div class="modal-sub">Do you want to save the cupping form?</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-done" id="btnDone" onclick="saveCupping()">
+        <span class="btn-label">Done</span>
+        <div class="spinner"></div>
+        <svg class="done-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const PROCESSES = [
+  { id:"classic-washed",  label:"Indragiri\nClassic Washed",        color:"#6b7a5a", about:"ABOUT CLASSIC WASHED",  desc:"Traditional wet process, clean and bright cup profile.", icon:"washed" },
+  { id:"dual-phase",      label:"Indragiri\nDual Phase",            color:"#b8d43a", about:"ABOUT DUAL PHASE",      desc:"Two-stage fermentation with wash, for clarity and balance.", icon:"dual" },
+  { id:"thermal-shock",   label:"Indragiri\nThermal Shock",         color:"#d4a843", about:"ABOUT THERMAL SHOCK",   desc:"Rapid temperature-cycling fermentation, complex body.", icon:"thermal" },
+  { id:"slow-dried",      label:"Indragiri\nSlow Dried Natural",    color:"#c47a3a", about:"ABOUT SLOW DRIED",      desc:"Extended drying on raised beds, full fruit sweetness.", icon:"natural" },
+  { id:"lalvin-yeast",    label:"Indragiri\nLalvin Yeast Natural",  color:"#9b5ec4", about:"ABOUT LALVIN YEAST",    desc:"Controlled yeast fermentation, pronounced floral top-notes.", icon:"yeast" }
+];
+
+const SCORES_DEF = [
+  { key:"fragrance",  label:"Fragrance / Aroma", icon:"aroma"   },
+  { key:"flavor",     label:"Flavor",            icon:"flavor"  },
+  { key:"aftertaste", label:"Aftertaste",        icon:"after"   },
+  { key:"acidity",    label:"Acidity",           icon:"acidity" },
+  { key:"body",       label:"Body",              icon:"body"    },
+  { key:"balance",    label:"Balance",           icon:"balance" },
+  { key:"overall",    label:"Overall",           icon:"overall" }
+];
+
+const FLAVORS = ["Bright","Juicy","Sweet","Clean","Citrus","Tropical","Berries","Floral","Chocolate","Caramel","Nutty","Earthy","Spicy","Fruity","Orange","Pineapple","Berry","Cacao","Herbal"];
+
+let currentProcess = 1;
+let scores = { fragrance:8, flavor:8.25, aftertaste:7.75, acidity:8.25, body:8, balance:8.25, overall:8 };
+let selectedFlavors = new Set();
+let lastResult = null;
+let allHistory = [];
+let historyFilter = 'all';
+let ownerFilterVal = 'all';
+let isOwner = false;
+const OWNER_PIN = '141007';
+const OWNER_EMAIL = 'agintoro@gmail.com';
+const OWNER_PASS = '141007';
+let pinBuffer = '';
+
+// ─── SCREEN NAV ──────────────────────────────────────────────────────────────
+function showScreen(id, back=false) {
+  const prev = document.querySelector('.screen.active');
+  const next = document.getElementById(id);
+  if (!next || next === prev) return;
+  if (prev) { prev.classList.remove('active'); if (back) { prev.style.transition='none'; setTimeout(()=>prev.style.transition='',10); } }
+  next.style.transform = back ? 'translateX(-30px)' : 'translateX(30px)';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ next.classList.add('active'); next.style.transform=''; }));
+}
+
+function showNav() {
+  const nav = document.getElementById('bottomNav');
+  nav.classList.add('visible');
+}
+
+function navTo(screenId, tabId) {
+  showScreen(screenId);
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+}
+
+// ─── SVG ICONS ───────────────────────────────────────────────────────────────
+function processIcon(type, c) {
+  c = c||'#b8d43a';
+  const icons = {
+    washed:`<svg viewBox="0 0 90 90" fill="none"><circle cx="45" cy="45" r="28" stroke="${c}" stroke-width="1.2"/><path d="M45 20L45 70" stroke="${c}" stroke-width="1" stroke-dasharray="3 3"/><path d="M20 45L70 45" stroke="${c}" stroke-width="1" stroke-dasharray="3 3"/><path d="M30 30 Q45 18 60 30 Q72 45 60 60 Q45 72 30 60 Q18 45 30 30Z" stroke="${c}" stroke-width="1.2" fill="none"/><circle cx="45" cy="45" r="6" stroke="${c}" stroke-width="1.2" fill="${c}0a"/><path d="M58 22 Q60 18 62 22 Q62 26 58 26Z" stroke="${c}" stroke-width="0.8" fill="none"/><path d="M28 62 Q30 58 32 62 Q32 66 28 66Z" stroke="${c}" stroke-width="0.8" fill="none"/></svg>`,
+    dual:`<svg viewBox="0 0 90 90" fill="none"><rect x="20" y="25" width="50" height="45" rx="6" stroke="${c}" stroke-width="1.2"/><rect x="28" y="18" width="34" height="10" rx="4" stroke="${c}" stroke-width="1.1"/><rect x="21" y="46" width="48" height="23" rx="0 0 5 5" fill="${c}11"/><line x1="21" y1="46" x2="69" y2="46" stroke="${c}" stroke-width="0.8" stroke-dasharray="4 2"/><circle cx="35" cy="56" r="2.5" stroke="${c}" stroke-width="0.8"/><circle cx="50" cy="60" r="2" stroke="${c}" stroke-width="0.8"/><circle cx="62" cy="53" r="1.8" stroke="${c}" stroke-width="0.8"/><line x1="45" y1="46" x2="45" y2="70" stroke="${c}" stroke-width="0.8" stroke-dasharray="3 2"/><path d="M45 18 L45 8 M38 8 L52 8" stroke="${c}" stroke-width="1" stroke-linecap="round"/></svg>`,
+    thermal:`<svg viewBox="0 0 90 90" fill="none"><rect x="38" y="15" width="14" height="42" rx="7" stroke="${c}" stroke-width="1.2"/><circle cx="45" cy="63" r="12" stroke="${c}" stroke-width="1.2" fill="${c}11"/><rect x="40" y="40" width="10" height="22" rx="5" fill="${c}33"/><circle cx="45" cy="63" r="7" fill="${c}44" stroke="${c}" stroke-width="0.8"/><line x1="52" y1="30" x2="58" y2="30" stroke="${c}" stroke-width="1" stroke-linecap="round"/><line x1="52" y1="38" x2="60" y2="38" stroke="${c}" stroke-width="1" stroke-linecap="round"/><line x1="52" y1="46" x2="58" y2="46" stroke="${c}" stroke-width="1" stroke-linecap="round"/></svg>`,
+    natural:`<svg viewBox="0 0 90 90" fill="none"><circle cx="45" cy="20" r="10" stroke="${c}" stroke-width="1.2" fill="${c}11"/><path d="M45 6L45 2 M59 10L62 7 M65 24L69 24" stroke="${c}" stroke-width="1" stroke-linecap="round"/><rect x="10" y="55" width="70" height="25" rx="4" stroke="${c}" stroke-width="1.2" fill="${c}0a"/><line x1="18" y1="80" x2="18" y2="90" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/><line x1="72" y1="80" x2="72" y2="90" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/><circle cx="30" cy="67" r="4" stroke="${c}" stroke-width="1" fill="${c}22"/><circle cx="45" cy="65" r="4.5" stroke="${c}" stroke-width="1" fill="${c}22"/><circle cx="60" cy="67" r="4" stroke="${c}" stroke-width="1" fill="${c}22"/><circle cx="38" cy="72" r="3.5" stroke="${c}" stroke-width="1" fill="${c}22"/><circle cx="53" cy="71" r="3.5" stroke="${c}" stroke-width="1" fill="${c}22"/></svg>`,
+    yeast:`<svg viewBox="0 0 90 90" fill="none"><path d="M35 15 L35 42 L15 72 Q13 78 20 78 L70 78 Q77 78 75 72 L55 42 L55 15 Z" stroke="${c}" stroke-width="1.2"/><line x1="32" y1="15" x2="58" y2="15" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/><path d="M22 70 L68 70 L55 42 L35 42 Z" fill="${c}18"/><line x1="22" y1="70" x2="68" y2="70" stroke="${c}" stroke-width="0.8" stroke-dasharray="4 2"/><circle cx="38" cy="62" r="3" stroke="${c}" stroke-width="0.8"/><circle cx="52" cy="58" r="3.5" stroke="${c}" stroke-width="0.8"/><circle cx="44" cy="52" r="2.5" stroke="${c}" stroke-width="0.8"/><circle cx="56" cy="68" r="2" stroke="${c}" stroke-width="0.7"/></svg>`
+  };
+  return icons[type]||icons.washed;
+}
+
+function scoreIcon(type) {
+  const icons = {
+    aroma:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3c0 3 4 3 4 6s-4 3-4 6M14 3c0 3 4 3 4 6s-4 3-4 6" stroke-linecap="round"/></svg>`,
+    flavor:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M8 9s1-1 4-1 4 1 4 1M7 14s1 3 5 3 5-3 5-3"/></svg>`,
+    after:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10h11l3-3 3 3-3 3H3z" stroke-linejoin="round"/></svg>`,
+    acidity:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linejoin="round"/></svg>`,
+    body:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>`,
+    balance:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M3 12h18" stroke-linecap="round"/></svg>`,
+    overall:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3 6.5L22 10l-5 4.5 1.2 7-6.2-3.5L5.8 21.5 7 14.5 2 10l7-1.5z" stroke-linejoin="round"/></svg>`
+  };
+  return icons[type]||icons.overall;
+}
+
+// ─── CAROUSEL ────────────────────────────────────────────────────────────────
+function buildCarousel() {
+  const track = document.getElementById('carouselTrack');
+  const dots  = document.getElementById('carouselDots');
+  track.innerHTML = ''; dots.innerHTML = '';
+  PROCESSES.forEach((p,i)=>{
+    const card = document.createElement('div');
+    card.className = 'process-card'+(i===currentProcess?' active-card':'');
+    card.innerHTML = `<div class="card-icon">${processIcon(p.icon,p.color)}</div><div class="card-label">${p.label.replace('\n','<br>')}</div><div class="card-desc-area"><div class="card-desc-title">${p.about}</div><div class="card-desc-text">${p.desc}</div></div>`;
+    card.onclick = ()=>selectProcess(i);
+    track.appendChild(card);
+    const dot = document.createElement('div');
+    dot.className='dot'+(i===currentProcess?' active':'');
+    dot.onclick=()=>selectProcess(i);
+    dots.appendChild(dot);
+  });
+  updateCarouselTransform(); updateProcessInfo();
+}
+
+function selectProcess(idx) {
+  currentProcess=idx;
+  document.querySelectorAll('.process-card').forEach((c,i)=>c.classList.toggle('active-card',i===idx));
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  updateCarouselTransform(); updateProcessInfo();
+}
+
+function updateCarouselTransform() {
+  const track=document.getElementById('carouselTrack');
+  const wrapper=document.getElementById('carouselWrapper');
+  const ww=wrapper.offsetWidth;
+  const cards=track.querySelectorAll('.process-card');
+  if(!cards.length)return;
+  let offset=24;
+  for(let i=0;i<currentProcess;i++) offset+=cards[i].offsetWidth+12;
+  const activeW=cards[currentProcess]?.offsetWidth||175;
+  const centered=offset-(ww/2)+(activeW/2);
+  track.style.transform=`translateX(-${Math.max(0,centered)}px)`;
+}
+
+function updateProcessInfo() {
+  const p=PROCESSES[currentProcess];
+  document.getElementById('pirLabel').textContent=p.about;
+  document.getElementById('pirDesc').textContent=p.desc;
+}
+
+// ─── SCORE ROWS ──────────────────────────────────────────────────────────────
+function buildScoreRows() {
+  const c=document.getElementById('scoreRows'); c.innerHTML='';
+  SCORES_DEF.forEach(s=>{
+    const row=document.createElement('div'); row.className='score-row';
+    row.innerHTML=`<div class="score-icon">${scoreIcon(s.icon)}</div><div class="score-name">${s.label}</div><div class="score-slider-wrap"><input type="range" class="score-slider" min="0" max="10" step="0.25" value="${scores[s.key]}" id="sl-${s.key}"></div><div class="score-val" id="sv-${s.key}">${scores[s.key].toFixed(2)}</div>`;
+    c.appendChild(row);
+    const sl=row.querySelector(`#sl-${s.key}`);
+    const sv=row.querySelector(`#sv-${s.key}`);
+    sl.addEventListener('input',()=>{ scores[s.key]=parseFloat(sl.value); sv.textContent=scores[s.key].toFixed(2); updateSliderBg(sl); });
+    updateSliderBg(sl);
+  });
+}
+
+function updateSliderBg(sl) {
+  const p=(parseFloat(sl.value)/10)*100;
+  sl.style.background=`linear-gradient(to right,var(--accent) 0%,var(--accent) ${p}%,var(--bg4) ${p}%,var(--bg4) 100%)`;
+}
+
+function buildFlavorChips() {
+  const c=document.getElementById('flavorChips'); c.innerHTML='';
+  FLAVORS.forEach(f=>{
+    const chip=document.createElement('div');
+    chip.className='flavor-chip'+(selectedFlavors.has(f)?' active':'');
+    chip.textContent=f;
+    chip.onclick=()=>{ if(selectedFlavors.has(f)){selectedFlavors.delete(f);chip.classList.remove('active');}else{selectedFlavors.add(f);chip.classList.add('active');} };
+    c.appendChild(chip);
+  });
+}
+
+function resetForm() {
+  document.getElementById('cupperName').value='';
+  document.getElementById('sampleCode').value='';
+  document.getElementById('tastingNotes').value='';
+  scores={fragrance:8,flavor:8.25,aftertaste:7.75,acidity:8.25,body:8,balance:8.25,overall:8};
+  selectedFlavors=new Set();
+  document.querySelectorAll('#sweetnessGroup .toggle-btn').forEach((b,i)=>b.classList.toggle('active',i===1));
+  document.querySelectorAll('#cleanCupGroup .toggle-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('#defectsGroup .toggle-btn').forEach((b,i)=>{ b.classList.remove('active','active-red'); if(i===0)b.classList.add('active'); });
+  buildScoreRows(); buildFlavorChips();
+}
+
+function setToggle(gId,btn) {
+  document.querySelectorAll(`#${gId} .toggle-btn`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setToggleDefects(btn) {
+  document.querySelectorAll('#defectsGroup .toggle-btn').forEach(b=>b.classList.remove('active','active-red'));
+  btn.classList.add(btn.dataset.val==='None'?'active':'active-red');
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openModal(){ document.getElementById('doneModal').classList.add('open'); }
+function closeModal(){ document.getElementById('doneModal').classList.remove('open'); }
+
+// ─── SAVE ────────────────────────────────────────────────────────────────────
+async function saveCupping() {
+  const btn = document.getElementById('btnDone');
+  if (btn.disabled) return;
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const process   = PROCESSES[currentProcess];
+  const cupper    = document.getElementById('cupperName').value.trim() || 'Anonymous';
+  const sample    = document.getElementById('sampleCode').value.trim() || 'DRV-001';
+  const notes     = document.getElementById('tastingNotes').value.trim();
+  const sweetness = document.querySelector('#sweetnessGroup .toggle-btn.active')?.dataset.val || 'Med';
+  const cleanCup  = document.querySelector('#cleanCupGroup .toggle-btn.active')?.dataset.val  || 'Yes';
+  const defectsEl = document.querySelector('#defectsGroup .active-red') || document.querySelector('#defectsGroup .active');
+  const defects   = defectsEl?.dataset.val || 'None';
+  const finalScore = parseFloat((Object.values(scores).reduce((a,b)=>a+b,0) / Object.keys(scores).length).toFixed(2));
+
+  const payload = {
+    processId:    process.id,
+    processLabel: process.label.replace('\n', ' '),
+    cupperName:   cupper,
+    sampleCode:   sample,
+    scores:       { ...scores },
+    sweetness, cleanCup, defects,
+    flavors:      Array.from(selectedFlavors),
+    notes,
+    finalScore,
+    timestamp:    Date.now()
+  };
+  lastResult = payload;
+
+  // Save via REST API — reliable, gives real HTTP codes, no silent hangs
+  // Wait for auth max 8s
+  if (!window._firebaseReady) {
+    await new Promise(r => {
+      document.addEventListener('firebase-ready', r, { once: true });
+      setTimeout(r, 8000);
+    });
+  }
+
+  try {
+    const user = firebase.auth().currentUser;
+    const token = user ? await user.getIdToken() : null;
+    const url = 'https://driva-data-default-rtdb.asia-southeast1.firebasedatabase.app/cuppings.json'
+              + (token ? '?auth=' + token : '');
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const txt = await resp.text();
+    if (resp.ok) {
+      showToast('✓ Saved to Firebase');
+    } else {
+      console.error('[Driva] REST error', resp.status, txt);
+      showToast('Save error ' + resp.status + ': ' + txt.substring(0, 50));
+    }
+  } catch (e) {
+    console.error('[Driva] Network error:', e.message);
+    showToast('Network error: ' + e.message.substring(0, 50));
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+  closeModal();
+  buildResultsPage(lastResult);
+  showScreen('results-screen');
+  navTo('results-screen', 'navCup');
+}
+
+// ─── RESULTS ─────────────────────────────────────────────────────────────────
+function buildResultsPage(r) {
+  if(!r)return;
+  const dateStr=new Date(r.timestamp||Date.now()).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('resultProcessName').textContent=r.processLabel||'—';
+  document.getElementById('resultMeta').textContent=`${r.cupperName} · ${dateStr}`;
+  document.getElementById('resultFinalScore').textContent=r.finalScore?.toFixed(2)||'—';
+  document.getElementById('resultScore2').textContent=r.finalScore?.toFixed(2)||'—';
+  document.getElementById('resultCupper2').textContent=r.cupperName||'—';
+  document.getElementById('resultDate2').textContent=dateStr;
+
+  const fc=document.getElementById('resultFlavors'); fc.innerHTML='';
+  const flavs=r.flavors?.length?r.flavors:["Bright","Juicy","Sweet","Clean"];
+  flavs.forEach(f=>{ const chip=document.createElement('div'); chip.className='flavor-chip active'; chip.textContent=f; fc.appendChild(chip); });
+
+  const ne=document.getElementById('resultNotes');
+  if(r.notes){ ne.textContent=r.notes; ne.style.display='block'; } else { ne.style.display='none'; }
+
+  setTimeout(()=>drawRadar('radarChart', r.scores||scores), 100);
+}
+
+// ─── RADAR ───────────────────────────────────────────────────────────────────
+function drawRadar(canvasId, scoresData) {
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, R=Math.min(W,H)*0.36;
+  ctx.clearRect(0,0,W,H);
+  const labels=["Fragrance","Flavor","Aftertaste","Acidity","Body","Balance","Overall"];
+  const vals=SCORES_DEF.map(s=>(scoresData[s.key]||0)/10);
+  const N=labels.length;
+  const angle=i=>(Math.PI*2*i)/N - Math.PI/2;
+
+  [0.25,0.5,0.75,1].forEach(f=>{
+    ctx.beginPath();
+    for(let i=0;i<N;i++){ const a=angle(i),x=cx+R*f*Math.cos(a),y=cy+R*f*Math.sin(a); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.closePath(); ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1; ctx.stroke();
+  });
+  for(let i=0;i<N;i++){ const a=angle(i); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a)); ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1; ctx.stroke(); }
+
+  ctx.beginPath();
+  for(let i=0;i<N;i++){ const a=angle(i),v=vals[i],x=cx+R*v*Math.cos(a),y=cy+R*v*Math.sin(a); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.closePath();
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+  g.addColorStop(0,'rgba(184,212,58,0.4)'); g.addColorStop(1,'rgba(184,212,58,0.08)');
+  ctx.fillStyle=g; ctx.fill(); ctx.strokeStyle='#b8d43a'; ctx.lineWidth=1.8; ctx.stroke();
+
+  for(let i=0;i<N;i++){ const a=angle(i),v=vals[i],x=cx+R*v*Math.cos(a),y=cy+R*v*Math.sin(a); ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fillStyle='#b8d43a'; ctx.fill(); ctx.strokeStyle='#0d0f0a'; ctx.lineWidth=1.5; ctx.stroke(); }
+
+  ctx.font='10px DM Sans,system-ui,sans-serif'; ctx.fillStyle='rgba(232,234,216,0.65)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<N;i++){ const a=angle(i),lx=cx+(R+22)*Math.cos(a),ly=cy+(R+22)*Math.sin(a); ctx.fillText(labels[i],lx,ly); }
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+let _historyListenerAttached = false;
+
+function loadHistory() {
+  // Show loading state
+  document.getElementById('historyCount').textContent = 'Loading…';
+  document.getElementById('historyBody').innerHTML = `
+    <div class="history-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+      <div>Connecting to database…</div>
+    </div>`;
+
+  // If Firebase is already ready, attach immediately
+  if (window._firebaseReady) {
+    _attachHistoryListener();
+    return;
+  }
+
+  // Otherwise wait for the firebase-ready event (fires when auth resolves)
+  document.addEventListener('firebase-ready', () => {
+    _attachHistoryListener();
+  }, { once: true });
+
+  // Hard fallback: if still not ready after 8s, show empty state
+  setTimeout(() => {
+    if (!window._firebaseReady) {
+      document.getElementById('historyCount').textContent = 'Unable to connect';
+      document.getElementById('historyBody').innerHTML = `
+        <div class="history-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+          <div>Could not reach database.<br>Check your connection.</div>
+        </div>`;
+    }
+  }, 8000);
+}
+
+function _attachHistoryListener() {
+  // Only attach the realtime listener once — it stays alive
+  if (_historyListenerAttached) {
+    // Already listening — just re-render what we have
+    renderHistory(allHistory);
+    return;
+  }
+  _historyListenerAttached = true;
+
+  const dbRef = window._db.ref('cuppings');
+  dbRef.on('value', snapshot => {
+    const data = snapshot.val();
+    allHistory = [];
+    if (data) {
+      Object.entries(data).forEach(([key, val]) => allHistory.push({ ...val, _key: key }));
+      allHistory.sort((a, b) => b.timestamp - a.timestamp);
+    }
+    renderHistory(allHistory);
+  }, err => {
+    console.error('[Driva] History read error:', err.code || err.message);
+    document.getElementById('historyCount').textContent = 'Permission denied';
+    document.getElementById('historyBody').innerHTML = `
+      <div class="history-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+        <div>Database error: ${err.code}<br>Check Firebase rules.</div>
+      </div>`;
+  });
+}
+
+function filterHistory(filter, el) {
+  historyFilter=filter;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const filtered=filter==='all'?allHistory:allHistory.filter(r=>r.processId===filter);
+  renderHistoryCards(filtered);
+}
+
+function renderHistory(data) {
+  // Stats
+  const statsRow=document.getElementById('historyStats');
+  const countEl=document.getElementById('historyCount');
+  if(data.length===0) { statsRow.style.display='none'; countEl.textContent='No sessions yet'; }
+  else {
+    statsRow.style.display='flex';
+    const avg=(data.reduce((a,b)=>a+(b.finalScore||0),0)/data.length).toFixed(2);
+    const best=Math.max(...data.map(d=>d.finalScore||0)).toFixed(2);
+    document.getElementById('statTotal').textContent=data.length;
+    document.getElementById('statAvg').textContent=avg;
+    document.getElementById('statBest').textContent=best;
+    countEl.textContent=`${data.length} session${data.length!==1?'s':''}`;
+  }
+  const filtered=historyFilter==='all'?data:data.filter(r=>r.processId===historyFilter);
+  renderHistoryCards(filtered);
+}
+
+function renderHistoryCards(data) {
+  const body=document.getElementById('historyBody');
+  if(data.length===0) {
+    body.innerHTML=`<div class="history-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg><div>${allHistory.length===0?'No cupping sessions yet.<br>Start your first session!':'No sessions for this process.'}</div></div>`;
+    return;
+  }
+  body.innerHTML='';
+  data.forEach(r=>{
+    const dateStr=new Date(r.timestamp||Date.now()).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const timeStr=new Date(r.timestamp||Date.now()).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const flavors=(r.flavors||[]).slice(0,4);
+    const card=document.createElement('div');
+    card.className='history-card';
+    card.innerHTML=`
+      <div class="history-card-top">
+        <div>
+          <div class="history-card-name">${r.processLabel||'—'}</div>
+          <div class="history-card-process">${r.cupperName||'—'} · ${r.sampleCode||'—'}</div>
+        </div>
+        <div>
+          <div class="history-score-badge">${r.finalScore?.toFixed(2)||'—'}</div>
+          <div class="history-score-label">Score</div>
+        </div>
+      </div>
+      <div class="history-card-meta">
+        <div class="history-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${dateStr}</div>
+        <div class="history-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>${timeStr}</div>
+      </div>
+      ${flavors.length?`<div class="history-card-chips">${flavors.map(f=>`<div class="history-chip">${f}</div>`).join('')}${r.flavors?.length>4?`<div class="history-chip">+${r.flavors.length-4}</div>`:''}</div>`:''}
+      <div class="history-card-actions">
+        <button class="history-action-btn export" onclick="exportPDF(event,'${r._key}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 15V3m0 12l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" stroke-linecap="round"/></svg>
+          Export PDF
+        </button>
+        <button class="history-action-btn" style="background:var(--accent-dim);color:var(--accent);" onclick="viewResult(event,'${r._key}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/></svg>
+          View
+        </button>
+        <button class="history-action-btn delete" onclick="deleteSession(event,'${r._key}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2" stroke-linecap="round"/></svg>
+          Delete
+        </button>
+      </div>`;
+    body.appendChild(card);
+  });
+}
+
+function viewResult(e, key) {
+  e.stopPropagation();
+  const r=allHistory.find(h=>h._key===key);
+  if(!r)return;
+  lastResult=r;
+  buildResultsPage(r);
+  navTo('results-screen','navCup');
+}
+
+function deleteSession(e, key) {
+  e.stopPropagation();
+  if(!confirm('Delete this cupping session?'))return;
+  if(window._firebaseReady) {
+    window._db.ref('cuppings/' + key).remove()
+      .then(()=>showToast('Session deleted'))
+      .catch(()=>showToast('Error deleting'));
+  }
+}
+
+// ─── EXPORT PDF ───────────────────────────────────────────────────────────────
+function exportCurrentPDF() { if(lastResult) generatePDF(lastResult); else showToast('No result to export'); }
+
+function exportPDF(e, key) {
+  e.stopPropagation();
+  const r=allHistory.find(h=>h._key===key);
+  if(r) generatePDF(r); else showToast('Session not found');
+}
+
+function generatePDF(r) {
+  showToast('Generating PDF…');
+  const { jsPDF } = window.jspdf;
+  if(!jsPDF){ showToast('PDF library not loaded'); return; }
+
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W=210, H=297;
+  const mg=20; // margin
+  let y=mg;
+
+  // ── Background ──
+  doc.setFillColor(13,15,10);
+  doc.rect(0,0,W,H,'F');
+
+  // ── Header band ──
+  doc.setFillColor(30,35,24);
+  doc.rect(0,0,W,52,'F');
+
+  // ── DRIVA wordmark ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(28);
+  doc.setTextColor(232,234,216);
+  doc.text('DRIVA',mg,28);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(106,112,96);
+  doc.text('CUPPING REPORT',mg,36);
+
+  // ── Score badge ──
+  doc.setFillColor(184,212,58);
+  doc.roundedRect(W-mg-38, 10, 38, 32, 4, 4, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.setTextColor(13,15,10);
+  doc.text(`${r.finalScore?.toFixed(2)||'—'}`,W-mg-19,28,{align:'center'});
+  doc.setFontSize(7);
+  doc.text('FINAL SCORE',W-mg-19,35,{align:'center'});
+
+  y=60;
+
+  // ── Process name ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.setTextColor(232,234,216);
+  doc.text(r.processLabel||'—', mg, y);
+  y+=8;
+
+  // ── Meta line ──
+  const dateStr=new Date(r.timestamp||Date.now()).toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(106,112,96);
+  doc.text(`${r.cupperName||'—'}  ·  ${r.sampleCode||'—'}  ·  ${dateStr}`, mg, y);
+  y+=12;
+
+  // ── Divider ──
+  doc.setDrawColor(184,212,58,0.3);
+  doc.setLineWidth(0.3);
+  doc.line(mg,y,W-mg,y);
+  y+=10;
+
+  // ── Score grid ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(155,160,138);
+  doc.text('CUPPING SCORES', mg, y);
+  y+=8;
+
+  const scoreKeys=Object.keys(r.scores||scores);
+  const colW=(W-mg*2)/2;
+  let col=0, rowY=y;
+
+  scoreKeys.forEach((k,i)=>{
+    const sc=r.scores?.[k]??scores[k];
+    const label=SCORES_DEF.find(s=>s.key===k)?.label||k;
+    const xOff=mg+(col*colW);
+
+    // Row bg
+    doc.setFillColor(30,35,24);
+    doc.roundedRect(xOff,rowY-4,colW-4,10,2,2,'F');
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(155,160,138);
+    doc.text(label, xOff+4, rowY+2);
+
+    // Mini progress bar
+    const barX=xOff+colW-4-28;
+    doc.setFillColor(33,38,25);
+    doc.roundedRect(barX,rowY-1,24,3,1,1,'F');
+    doc.setFillColor(184,212,58);
+    doc.roundedRect(barX,rowY-1,(sc/10)*24,3,1,1,'F');
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(184,212,58);
+    doc.text(sc.toFixed(2), xOff+colW-5, rowY+2, {align:'right'});
+
+    col++;
+    if(col>=2){ col=0; rowY+=13; }
+  });
+  if(col===1) rowY+=13;
+  y=rowY+6;
+
+  // ── Divider ──
+  doc.setDrawColor(50,58,38);
+  doc.line(mg,y,W-mg,y);
+  y+=10;
+
+  // ── Evaluation ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(155,160,138);
+  doc.text('EVALUATION', mg, y);
+  y+=8;
+
+  const evalItems=[
+    { label:'Sweetness', val:r.sweetness||'—' },
+    { label:'Clean Cup',  val:r.cleanCup||'—' },
+    { label:'Defects',   val:r.defects||'—' }
+  ];
+  const evalW=(W-mg*2-8)/3;
+  evalItems.forEach((item,i)=>{
+    const ex=mg+i*(evalW+4);
+    doc.setFillColor(30,35,24);
+    doc.roundedRect(ex,y-4,evalW,16,3,3,'F');
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(106,112,96);
+    doc.text(item.label,ex+evalW/2,y+2,{align:'center'});
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(232,234,216);
+    doc.text(item.val,ex+evalW/2,y+9,{align:'center'});
+  });
+  y+=24;
+
+  // ── Flavor notes ──
+  if(r.flavors?.length) {
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(155,160,138);
+    doc.text('FLAVOR NOTES', mg, y);
+    y+=8;
+
+    let fx=mg; let chipRowY=y;
+    r.flavors.forEach(f=>{
+      const fw=doc.getTextWidth(f)+8;
+      if(fx+fw>W-mg){ fx=mg; chipRowY+=10; }
+      doc.setFillColor(37,43,28);
+      doc.roundedRect(fx,chipRowY-4,fw,8,2,2,'F');
+      doc.setDrawColor(184,212,58,0.3);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(fx,chipRowY-4,fw,8,2,2,'S');
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(184,212,58);
+      doc.text(f,fx+fw/2,chipRowY+1,{align:'center'});
+      fx+=fw+4;
+    });
+    y=chipRowY+14;
+  }
+
+  // ── Tasting notes ──
+  if(r.notes) {
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(155,160,138);
+    doc.text('TASTING NOTES', mg, y);
+    y+=8;
+
+    doc.setFillColor(30,35,24);
+    const noteLines=doc.splitTextToSize(r.notes, W-mg*2-16);
+    const noteH=noteLines.length*5+12;
+    doc.roundedRect(mg,y-4,W-mg*2,noteH,3,3,'F');
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(9);
+    doc.setTextColor(155,160,138);
+    doc.text(noteLines,mg+8,y+3);
+    y+=noteH+8;
+  }
+
+  // ── Radar chart ──
+  // Draw a simplified radar inline in PDF
+  const radarSize=60; const rcx=W/2; const rcy=y+radarSize+6;
+  if(rcy+radarSize+20<H-mg) {
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(155,160,138);
+    doc.text('FLAVOR SPECTRUM', mg, y);
+    y+=10;
+
+    const scVals=SCORES_DEF.map(s=>(r.scores?.[s.key]??8)/10);
+    const N2=scVals.length;
+    const ang=i=>(Math.PI*2*i)/N2-Math.PI/2;
+
+    // Grid
+    [0.25,0.5,0.75,1].forEach(f=>{
+      const pts=[];
+      for(let i=0;i<N2;i++) pts.push([rcx+radarSize*f*Math.cos(ang(i)), rcy+radarSize*f*Math.sin(ang(i))]);
+      doc.setDrawColor(50,58,38); doc.setLineWidth(0.2);
+      doc.lines(pts.map((p,i)=>i===0?[0,0]:[p[0]-pts[i-1][0],p[1]-pts[i-1][1]]).slice(1).concat([[pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1]]]),pts[0][0],pts[0][1],[1,1],'S');
+    });
+
+    // Polygon
+    const polyPts=scVals.map((v,i)=>[rcx+radarSize*v*Math.cos(ang(i)), rcy+radarSize*v*Math.sin(ang(i))]);
+    doc.setFillColor(184,212,58);
+    doc.setDrawColor(184,212,58);
+    doc.setLineWidth(0.8);
+    doc.setGState && doc.setGState(doc.GState({opacity:0.2}));
+    const firstPt=polyPts[0];
+    doc.lines(polyPts.slice(1).map((p,i)=>[p[0]-polyPts[i][0],p[1]-polyPts[i][1]]).concat([[firstPt[0]-polyPts[polyPts.length-1][0],firstPt[1]-polyPts[polyPts.length-1][1]]]),firstPt[0],firstPt[1],[1,1],'FD');
+
+    // Labels
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(155,160,138);
+    SCORES_DEF.forEach((s,i)=>{ const a=ang(i); doc.text(s.label,rcx+(radarSize+12)*Math.cos(a),rcy+(radarSize+12)*Math.sin(a),{align:'center',baseline:'middle'}); });
+
+    y=rcy+radarSize+20;
+  }
+
+  // ── Footer ──
+  doc.setFillColor(30,35,24);
+  doc.rect(0,H-20,W,20,'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(106,112,96);
+  doc.text('DRIVA COFFEE · Specialty Processing · West Java, Indonesia', W/2, H-9, {align:'center'});
+  doc.text(`Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}`, W/2, H-4, {align:'center'});
+
+  // ── Save ──
+  const filename=`Driva-Cupping-${(r.processLabel||'Session').replace(/\s+/g,'-')}-${r.cupperName||'Anon'}.pdf`;
+  doc.save(filename);
+  showToast('✓ PDF downloaded');
+}
+
+// ─── PIN ─────────────────────────────────────────────────────────────────────
+function pinPress(digit) {
+  if (pinBuffer.length >= 6) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length === 6) {
+    setTimeout(checkPin, 120);
+  }
+}
+
+function pinDel() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots(false);
+}
+
+function updatePinDots(error = false) {
+  for (let i = 0; i < 6; i++) {
+    const dot = document.getElementById('pd' + i);
+    if (!dot) continue;
+    dot.classList.remove('filled', 'error');
+    if (error) {
+      dot.classList.add('error');
+    } else if (i < pinBuffer.length) {
+      dot.classList.add('filled');
+    }
+  }
+}
+
+function checkPin() {
+  if (pinBuffer === OWNER_PIN) {
+    ownerSignIn();
+  } else {
+    updatePinDots(true);
+    setTimeout(() => { pinBuffer = ''; updatePinDots(); }, 800);
+  }
+}
+
+function ownerSignIn() {
+  showToast('Signing in…');
+  firebase.auth().signInWithEmailAndPassword(OWNER_EMAIL, OWNER_PASS)
+    .then(() => {
+      isOwner = true;
+      window._firebaseReady = true;
+      // Show owner tab
+      document.getElementById('navOwner').classList.add('owner-visible');
+      showToast('✓ Owner mode active');
+      navTo('owner-screen', 'navOwner');
+      renderOwnerCards(allHistory);
+    })
+    .catch(err => {
+      showToast('Sign-in failed: ' + err.code);
+      pinBuffer = '';
+      updatePinDots();
+    });
+}
+
+function ownerSignOut() {
+  firebase.auth().signInAnonymously()
+    .then(credential => {
+      isOwner = false;
+      window._firebaseUid = credential.user.uid;
+      document.getElementById('navOwner').classList.remove('owner-visible');
+      navTo('process-screen', 'navCup');
+      showToast('Signed out of owner mode');
+    })
+    .catch(() => {
+      isOwner = false;
+      document.getElementById('navOwner').classList.remove('owner-visible');
+      navTo('process-screen', 'navCup');
+    });
+}
+
+// ─── OWNER RENDER ─────────────────────────────────────────────────────────────
+function ownerFilter(filter, el) {
+  ownerFilterVal = filter;
+  document.querySelectorAll('#owner-screen .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = filter === 'all' ? allHistory : allHistory.filter(r => r.processId === filter);
+  renderOwnerCards(filtered);
+}
+
+function renderOwnerCards(data) {
+  const body = document.getElementById('ownerBody');
+  const statsRow = document.getElementById('ownerStats');
+  const countEl = document.getElementById('ownerCount');
+
+  const filtered = ownerFilterVal === 'all' ? data : data.filter(r => r.processId === ownerFilterVal);
+
+  if (data.length === 0) {
+    statsRow.style.display = 'none';
+    countEl.textContent = 'No sessions yet';
+    body.innerHTML = `<div class="history-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+      <div>No cupping sessions yet.</div></div>`;
+    return;
+  }
+
+  statsRow.style.display = 'flex';
+  const avg = (data.reduce((a,b) => a + (b.finalScore||0), 0) / data.length).toFixed(2);
+  const best = Math.max(...data.map(d => d.finalScore||0)).toFixed(2);
+  document.getElementById('ownerStatTotal').textContent = data.length;
+  document.getElementById('ownerStatAvg').textContent = avg;
+  document.getElementById('ownerStatBest').textContent = best;
+  countEl.textContent = filtered.length + ' session' + (filtered.length !== 1 ? 's' : '');
+
+  body.innerHTML = '';
+  filtered.forEach(r => {
+    const dateStr = new Date(r.timestamp||Date.now()).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+    const timeStr = new Date(r.timestamp||Date.now()).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+    const flavors = (r.flavors||[]).slice(0, 4);
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    card.innerHTML = `
+      <div class="history-card-top">
+        <div>
+          <div class="history-card-name">${r.processLabel||'—'}</div>
+          <div class="history-card-process">${r.cupperName||'—'} · ${r.sampleCode||'—'}</div>
+        </div>
+        <div>
+          <div class="history-score-badge">${r.finalScore?.toFixed(2)||'—'}</div>
+          <div class="history-score-label">Score</div>
+        </div>
+      </div>
+      <div class="history-card-meta">
+        <div class="history-meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${dateStr}
+        </div>
+        <div class="history-meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          ${timeStr}
+        </div>
+      </div>
+      ${flavors.length ? `<div class="history-card-chips">${flavors.map(f=>`<div class="history-chip">${f}</div>`).join('')}${r.flavors?.length>4?`<div class="history-chip">+${r.flavors.length-4}</div>`:''}</div>` : ''}
+      <div class="history-card-actions">
+        <button class="history-action-btn export" onclick="exportPDF(event,'${r._key}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 15V3m0 12l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" stroke-linecap="round"/></svg>
+          PDF
+        </button>
+        <button class="history-action-btn" style="background:var(--accent-dim);color:var(--accent);" onclick="openEditModal(event,'${r._key}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="history-action-btn delete" onclick="ownerDelete(event,'${r._key}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2" stroke-linecap="round"/></svg>
+          Delete
+        </button>
+      </div>`;
+    body.appendChild(card);
+  });
+}
+
+// ─── EDIT ─────────────────────────────────────────────────────────────────────
+function openEditModal(e, key) {
+  e.stopPropagation();
+  const r = allHistory.find(h => h._key === key);
+  if (!r) return;
+
+  document.getElementById('editKey').value = key;
+  document.getElementById('editCupperName').value = r.cupperName || '';
+  document.getElementById('editSampleCode').value = r.sampleCode || '';
+  document.getElementById('editNotes').value = r.notes || '';
+
+  // Populate score sliders
+  const scoresDiv = document.getElementById('editScores');
+  scoresDiv.innerHTML = '';
+  SCORES_DEF.forEach(s => {
+    const val = r.scores?.[s.key] ?? 8;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+    row.innerHTML = `
+      <div class="edit-score-label">${s.label}</div>
+      <input type="range" class="score-slider" min="0" max="10" step="0.25"
+             value="${val}" id="escore-${s.key}" style="flex:1;">
+      <div class="score-val" id="esval-${s.key}" style="min-width:34px;text-align:right;font-size:13px;font-weight:600;color:var(--accent);">${parseFloat(val).toFixed(2)}</div>`;
+    scoresDiv.appendChild(row);
+    const sl = row.querySelector(`#escore-${s.key}`);
+    const sv = row.querySelector(`#esval-${s.key}`);
+    sl.addEventListener('input', () => { sv.textContent = parseFloat(sl.value).toFixed(2); updateSliderBg(sl); });
+    updateSliderBg(sl);
+  });
+
+  // Sweetness
+  document.querySelectorAll('#editSweetnessGroup .toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === (r.sweetness || 'Med'));
+  });
+  // Clean cup
+  document.querySelectorAll('#editCleanCupGroup .toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === (r.cleanCup || 'Yes'));
+  });
+  // Defects
+  document.querySelectorAll('#editDefectsGroup .toggle-btn').forEach(b => {
+    b.classList.remove('active', 'active-red');
+    if (b.dataset.val === (r.defects || 'None')) {
+      b.classList.add(b.dataset.val === 'None' ? 'active' : 'active-red');
+    }
+  });
+
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function setToggleDefects2(btn) {
+  document.querySelectorAll('#editDefectsGroup .toggle-btn').forEach(b => b.classList.remove('active','active-red'));
+  btn.classList.add(btn.dataset.val === 'None' ? 'active' : 'active-red');
+}
+
+async function saveEdit() {
+  const key = document.getElementById('editKey').value;
+  if (!key) return;
+
+  const newScores = {};
+  SCORES_DEF.forEach(s => {
+    newScores[s.key] = parseFloat(document.getElementById(`escore-${s.key}`)?.value || 8);
+  });
+  const finalScore = parseFloat((Object.values(newScores).reduce((a,b)=>a+b,0)/Object.keys(newScores).length).toFixed(2));
+  const sweetness = document.querySelector('#editSweetnessGroup .toggle-btn.active')?.dataset.val || 'Med';
+  const cleanCup  = document.querySelector('#editCleanCupGroup .toggle-btn.active')?.dataset.val  || 'Yes';
+  const defectsEl = document.querySelector('#editDefectsGroup .active-red') || document.querySelector('#editDefectsGroup .active');
+  const defects   = defectsEl?.dataset.val || 'None';
+
+  const updates = {
+    cupperName: document.getElementById('editCupperName').value.trim(),
+    sampleCode: document.getElementById('editSampleCode').value.trim(),
+    notes:      document.getElementById('editNotes').value.trim(),
+    scores:     newScores,
+    sweetness, cleanCup, defects, finalScore
+  };
+
+  try {
+    await window._db.ref('cuppings/' + key).update(updates);
+    showToast('✓ Session updated');
+    closeEditModal();
+  } catch(e) {
+    showToast('Update failed: ' + (e.code || e.message));
+  }
+}
+
+function ownerDelete(e, key) {
+  e.stopPropagation();
+  if (!confirm('Permanently delete this session?')) return;
+  window._db.ref('cuppings/' + key).remove()
+    .then(() => showToast('Session deleted'))
+    .catch(err => showToast('Delete failed: ' + err.code));
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function goToCuppingForm() {
+  resetForm();
+  showScreen('form-screen');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  buildCarousel();
+  buildScoreRows();
+  buildFlavorChips();
+
+  // Pre-attach history listener as soon as Firebase auth resolves
+  const attachOnReady = () => { if(window._firebaseReady) _attachHistoryListener(); };
+  document.addEventListener('firebase-ready', attachOnReady, { once: true });
+  // If already ready by DOMContentLoaded (rare but possible), attach now
+  if(window._firebaseReady) _attachHistoryListener();
+
+  // Swipe
+  const wrapper=document.getElementById('carouselWrapper');
+  let sx=0;
+  wrapper.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+  wrapper.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>40){ if(dx<0&&currentProcess<PROCESSES.length-1)selectProcess(currentProcess+1); else if(dx>0&&currentProcess>0)selectProcess(currentProcess-1); }
+  },{passive:true});
+
+  document.getElementById('doneModal').addEventListener('click',function(e){ if(e.target===this)closeModal(); });
+  window.addEventListener('resize',updateCarouselTransform);
+});
+</script>
+</body>
+</html>
