@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Classic Washed",
+    "category": "Clean / Transparent",
+    "description": "A clarity-focused washed process using controlled fermentation and clean water management to highlight origin character, structured acidity, and sweetness.",
+    "number": "01"
+  },
+  {
+    "name": "Slow Dried Natural",
+    "category": "Sweet / Slow Development",
+    "description": "A natural process dried slowly to build sweetness, body, and layered fruit character while reducing harsh ferment notes.",
+    "number": "02"
+  },
+  {
+    "name": "Dual Phase Natural",
+    "category": "Controlled Anaerobic",
+    "description": "A two-stage fermentation system using an initial aerobic phase followed by anaerobic fermentation to create fruit complexity, sweetness, and cleaner fermentation structure.",
+    "number": "03"
+  },
+  {
+    "name": "Lalvin Yeast Natural",
+    "category": "Inoculated Fermentation",
+    "description": "A yeast-inoculated natural process using Lalvin yeast to guide fermentation toward clean fruit aromatics, floral expression, and juicy acidity.",
+    "number": "04"
+  },
+  {
+    "name": "Mossto Natural",
+    "category": "Microbial Reuse / Fermentation Starter",
+    "description": "A natural process using mossto, the active liquid from previous fermentation, to intensify fruit complexity, sweetness, and microbial consistency.",
+    "number": "05"
+  },
+  {
+    "name": "Thermal Shock Natural",
+    "category": "Thermal / Experimental",
+    "description": "An experimental natural process using controlled temperature contrast to influence cellular breakdown, sweetness extraction, and aromatic intensity.",
+    "number": "06"
+  }
+]
