@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Driva Coffee — From Origin to Cup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=DM+Mono:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:        #09070A;
+      --bg2:       #111018;
+      --surface:   rgba(255,255,255,0.042);
+      --surface2:  rgba(255,255,255,0.065);
+      --border:    rgba(255,255,255,0.08);
+      --border2:   rgba(255,255,255,0.14);
+      --gold:      #C9A05A;
+      --gold-lt:   #E8C47A;
+      --gold-dim:  rgba(201,160,90,0.18);
+      --cream:     #F2E8D5;
+      --cream-dim: rgba(242,232,213,0.7);
+      --text:      #F0EAE0;
+      --text-dim:  rgba(240,234,224,0.55);
+      --text-mute: rgba(240,234,224,0.32);
+      --red:       #C0392B;
+      --ease:      cubic-bezier(0.25,0.46,0.45,0.94);
+      --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+    }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+    ::selection { background: var(--gold-dim); color: var(--gold-lt); }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+    /* ─── Noise texture overlay ──────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.5;
+    }
+
+    /* ─── Radial ambient lights ──────────────────────────────── */
+    .ambient {
+      position: fixed;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.13;
+      z-index: 0;
+    }
+    .ambient-1 { width: 700px; height: 700px; background: #8B5A2B; top: -200px; left: -150px; }
+    .ambient-2 { width: 500px; height: 500px; background: #C9A05A; bottom: 10%; right: -100px; opacity: 0.08; }
+    .ambient-3 { width: 400px; height: 400px; background: #2C1810; top: 40%; left: 30%; opacity: 0.25; }
+
+    /* ─── Nav ────────────────────────────────────────────────── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 900;
+      padding: 0 48px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      background: rgba(9,7,10,0.72);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.4s var(--ease);
+    }
+    .nav.scrolled { background: rgba(9,7,10,0.88); }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--cream);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-logo-dot {
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      transition: color 0.25s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 0; right: 0;
+      height: 1px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s var(--ease);
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+    .nav-cta {
+      padding: 9px 22px;
+      border: 1px solid var(--gold);
+      border-radius: 2px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      transition: all 0.3s var(--ease);
+      background: transparent;
+    }
+    .nav-cta:hover {
+      background: var(--gold);
+      color: var(--bg);
+    }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+    .hamburger span { display: block; width: 24px; height: 1.5px; background: var(--text); transition: all 0.3s; }
+
+    /* ─── Hero ───────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0 24px;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(90,45,15,0.55) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 80% at 80% 30%, rgba(50,25,8,0.4) 0%, transparent 60%),
+        linear-gradient(160deg, #0D0804 0%, #100A06 40%, #0D0709 100%);
+    }
+    .hero-img {
+      position: absolute;
+      inset: 0;
+      background:
+        url('https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1800&q=80&auto=format&fit=crop') center/cover no-repeat;
+      opacity: 0.12;
+      mix-blend-mode: luminosity;
+    }
+    .hero-gradient-line {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 300px;
+      background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 820px;
+    }
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.9s var(--ease) 0.2s forwards;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.2rem, 8vw, 6.8rem);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--cream);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.9s var(--ease) 0.4s forwards;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold-lt);
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-dim);
+      max-width: 520px;
+      margin: 0 auto 48px;
+      line-height: 1.75;
+      opacity: 0;
+      animation: fadeUp 0.9s var(--ease) 0.6s forwards;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.9s var(--ease) 0.8s forwards;
+    }
+    .btn-primary {
+      padding: 14px 36px;
+      background: var(--gold);
+      color: #0D0804;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-radius: 2px;
+      border: 1px solid var(--gold);
+      cursor: pointer;
+      transition: all 0.3s var(--ease);
+    }
+    .btn-primary:hover {
+      background: var(--gold-lt);
+      border-color: var(--gold-lt);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(201,160,90,0.3);
+    }
+    .btn-ghost {
+      padding: 14px 36px;
+      background: transparent;
+      color: var(--cream-dim);
+      font-weight: 500;
+      font-size: 0.82rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-radius: 2px;
+      border: 1px solid var(--border2);
+      cursor: pointer;
+      transition: all 0.3s var(--ease);
+    }
+    .btn-ghost:hover {
+      border-color: var(--cream-dim);
+      color: var(--cream);
+      transform: translateY(-2px);
+    }
+    .hero-scroll {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeIn 1s ease 1.4s forwards;
+    }
+    .hero-scroll-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+    .scroll-line {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollDown 1.6s ease-in-out infinite;
+    }
+    @keyframes scrollDown {
+      0% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+      50% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+      100% { opacity: 0; transform: scaleY(1); transform-origin: bottom; }
+    }
+
+    /* ─── Stats strip ────────────────────────────────────────── */
+    .stats {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-item {
+      background: var(--bg2);
+      padding: 36px 24px;
+      text-align: center;
+      transition: background 0.3s;
+    }
+    .stat-item:hover { background: rgba(255,255,255,0.03); }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.6rem;
+      font-weight: 600;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ─── Section commons ────────────────────────────────────── */
+    section { position: relative; z-index: 2; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 40px; }
+    .section-pad { padding: 120px 0; }
+    .section-pad-sm { padding: 80px 0; }
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 18px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      font-weight: 500;
+      line-height: 1.15;
+      color: var(--cream);
+    }
+    .section-title em { font-style: italic; color: var(--gold-lt); }
+    .divider {
+      width: 48px; height: 1px;
+      background: var(--gold);
+      margin: 24px 0;
+    }
+    .divider.centered { margin-left: auto; margin-right: auto; }
+
+    /* Reveal animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* ─── Story section ──────────────────────────────────────── */
+    .story {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .story-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .story-visual {
+      position: relative;
+    }
+    .story-img-wrap {
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+      aspect-ratio: 4/5;
+    }
+    .story-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: grayscale(20%) brightness(0.9);
+      transition: transform 0.8s var(--ease), filter 0.5s;
+    }
+    .story-img-wrap:hover img { transform: scale(1.03); filter: grayscale(0%) brightness(1); }
+    .story-img-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(9,7,10,0.7) 0%, transparent 50%);
+    }
+    .story-badge {
+      position: absolute;
+      bottom: 24px; right: -20px;
+      background: rgba(9,7,10,0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border2);
+      border-radius: 3px;
+      padding: 16px 20px;
+      text-align: center;
+    }
+    .story-badge-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .story-badge-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+    .story-dot {
+      position: absolute;
+      top: -12px; left: -12px;
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      border: 1px solid var(--gold-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .story-dot::before {
+      content: '';
+      width: 48px; height: 48px;
+      background: var(--gold-dim);
+      border-radius: 50%;
+    }
+    .story-text { }
+    .story-body {
+      color: var(--text-dim);
+      font-size: 1.02rem;
+      line-height: 1.85;
+      margin-bottom: 20px;
+    }
+    .story-quote {
+      border-left: 2px solid var(--gold);
+      padding: 12px 0 12px 24px;
+      margin: 32px 0;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.18rem;
+      font-style: italic;
+      color: var(--cream-dim);
+      line-height: 1.6;
+    }
+    .story-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 32px;
+    }
+    .story-tag {
+      padding: 6px 14px;
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      font-size: 0.73rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      transition: all 0.25s;
+    }
+    .story-tag:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ─── Tab nav ────────────────────────────────────────────── */
+    .tabs-section {
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      flex-shrink: 0;
+      padding: 20px 32px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.25s var(--ease);
+      position: relative;
+    }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text-dim); }
+    .tab-panels { }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.4s var(--ease); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp  { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── Products grid ──────────────────────────────────────── */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .product-card {
+      background: var(--bg2);
+      padding: 36px 28px;
+      transition: background 0.3s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .product-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--gold-dim), transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .product-card:hover { background: rgba(201,160,90,0.04); }
+    .product-card:hover::before { opacity: 1; }
+    .product-origin {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+    .product-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--cream);
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .product-process {
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      color: var(--text-mute);
+      margin-bottom: 16px;
+    }
+    .product-desc {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .product-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .product-tag {
+      padding: 3px 10px;
+      background: var(--gold-dim);
+      border-radius: 100px;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold-lt);
+    }
+    .product-score {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .product-score-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .product-score-label {
+      font-size: 0.72rem;
+      color: var(--text-mute);
+      letter-spacing: 0.08em;
+    }
+    .product-price {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+    .product-price strong {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--cream);
+      font-weight: 500;
+    }
+    .product-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-top: 16px;
+      transition: gap 0.25s;
+    }
+    .product-link:hover { gap: 14px; }
+    .product-link svg { transition: transform 0.25s; }
+    .product-link:hover svg { transform: translateX(4px); }
+
+    /* ─── Process section ────────────────────────────────────── */
+    .process-bg {
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 50%, var(--bg) 100%);
+    }
+    .process-header { text-align: center; margin-bottom: 72px; }
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+      position: relative;
+    }
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 32px; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border2), var(--gold-dim), var(--border2), transparent);
+    }
+    .process-step {
+      text-align: center;
+      padding: 0 16px;
+      position: relative;
+    }
+    .process-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 1.4rem;
+      position: relative;
+      z-index: 1;
+      transition: all 0.4s var(--ease));
+    }
+    .process-step:hover .process-icon {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+      transform: scale(1.1);
+    }
+    .process-step-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      color: var(--text-mute);
+      margin-bottom: 10px;
+    }
+    .process-step-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      color: var(--cream);
+      margin-bottom: 8px;
+    }
+    .process-step-desc {
+      font-size: 0.8rem;
+      color: var(--text-mute);
+      line-height: 1.65;
+    }
+
+    /* ─── Cupping / Grading section ──────────────────────────── */
+    .cupping {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .cupping-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .cupping-scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .score-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .score-card:hover {
+      border-color: var(--gold-dim);
+      background: rgba(201,160,90,0.04);
+    }
+    .score-category {
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin-bottom: 8px;
+    }
+    .score-bar-wrap {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    .score-bar {
+      height: 100%;
+      background: linear-gradient(to right, var(--gold), var(--gold-lt));
+      border-radius: 2px;
+      transform-origin: left;
+      animation: growBar 1.4s var(--ease) 0.3s both;
+    }
+    @keyframes growBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .score-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+    }
+    .cupping-desc {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      line-height: 1.85;
+      margin-bottom: 20px;
+    }
+    .cupping-badge-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 32px;
+    }
+    .cupping-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      backdrop-filter: blur(8px);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      transition: border-color 0.25s;
+    }
+    .cupping-badge:hover { border-color: var(--gold-dim); }
+    .cupping-badge-icon {
+      font-size: 1.1rem;
+    }
+
+    /* ─── Glass feature cards ────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .glass-card {
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 36px 28px;
+      transition: all 0.4s var(--ease);
+      position: relative;
+      overflow: hidden;
+    }
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, rgba(201,160,90,0.15) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .glass-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--border2);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,160,90,0.1);
+    }
+    .glass-card:hover::before { opacity: 1; }
+    .card-icon {
+      width: 48px; height: 48px;
+      background: var(--gold-dim);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--cream);
+      margin-bottom: 12px;
+    }
+    .card-body {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      line-height: 1.75;
+    }
+
+    /* ─── Testimonials ───────────────────────────────────────── */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .testimonial-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+      transition: all 0.35s var(--ease);
+    }
+    .testimonial-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border2);
+      background: rgba(255,255,255,0.04);
+    }
+    .testimonial-stars {
+      color: var(--gold);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+    .testimonial-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.0rem;
+      font-style: italic;
+      color: var(--cream-dim);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .testimonial-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold-lt);
+      flex-shrink: 0;
+    }
+    .testimonial-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--cream);
+    }
+    .testimonial-role {
+      font-size: 0.72rem;
+      color: var(--text-mute);
+      margin-top: 2px;
+    }
+
+    /* ─── Brew guide ─────────────────────────────────────────── */
+    .brew-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .brew-card {
+      background: var(--bg2);
+      padding: 32px 24px;
+      text-align: center;
+      transition: background 0.3s;
+      position: relative;
+    }
+    .brew-card:hover { background: rgba(201,160,90,0.04); }
+    .brew-emoji { font-size: 2rem; margin-bottom: 16px; }
+    .brew-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--cream);
+      margin-bottom: 12px;
+    }
+    .brew-params {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .brew-param {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .brew-param-label { color: var(--text-mute); letter-spacing: 0.06em; }
+    .brew-param-val { color: var(--gold); font-family: 'DM Mono', monospace; }
+    .brew-desc { font-size: 0.8rem; color: var(--text-mute); line-height: 1.6; }
+
+    /* ─── Origin map panel ───────────────────────────────────── */
+    .origins {
+      text-align: center;
+    }
+    .origins-header { margin-bottom: 64px; }
+    .origins-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+    .origin-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 24px 16px;
+      text-align: center;
+      transition: all 0.35s var(--ease);
+      cursor: pointer;
+    }
+    .origin-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--gold-dim);
+      background: rgba(201,160,90,0.05);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .origin-flag { font-size: 2.4rem; margin-bottom: 12px; }
+    .origin-country {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--cream);
+      margin-bottom: 4px;
+    }
+    .origin-region {
+      font-size: 0.7rem;
+      color: var(--text-mute);
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .origin-flavor {
+      font-size: 0.73rem;
+      color: var(--gold);
+      font-style: italic;
+    }
+
+    /* ─── CTA banner ─────────────────────────────────────────── */
+    .cta-banner {
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    .cta-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(120,65,20,0.5), transparent 70%),
+        var(--bg2);
+    }
+    .cta-border-top { border-top: 1px solid var(--border); }
+    .cta-content { position: relative; z-index: 2; }
+    .cta-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 500;
+      color: var(--cream);
+      margin-bottom: 16px;
+    }
+    .cta-sub {
+      font-size: 1rem;
+      color: var(--text-dim);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    /* ─── Footer ─────────────────────────────────────────────── */
+    footer {
+      background: #050306;
+      border-top: 1px solid var(--border);
+      padding: 64px 0 32px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 56px;
+    }
+    .footer-brand { }
+    .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--cream);
+      margin-bottom: 14px;
+    }
+    .footer-tagline {
+      font-size: 0.85rem;
+      color: var(--text-mute);
+      line-height: 1.7;
+      max-width: 240px;
+    }
+    .footer-social {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .social-btn {
+      width: 36px; height: 36px;
+      border: 1px solid var(--border2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      color: var(--text-mute);
+      transition: all 0.25s;
+    }
+    .social-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .footer-col-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a {
+      font-size: 0.87rem;
+      color: var(--text-mute);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-copy {
+      font-size: 0.78rem;
+      color: var(--text-mute);
+    }
+    .footer-bottom-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-bottom-links a {
+      font-size: 0.75rem;
+      color: var(--text-mute);
+      transition: color 0.2s;
+    }
+    .footer-bottom-links a:hover { color: var(--gold); }
+
+    /* ─── Mobile nav ─────────────────────────────────────────── */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(9,7,10,0.97);
+      backdrop-filter: blur(20px);
+      z-index: 850;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--cream-dim);
+      transition: color 0.2s;
+    }
+    .mobile-menu a:hover { color: var(--gold); }
+    .mobile-close {
+      position: absolute;
+      top: 24px; right: 28px;
+      font-size: 1.6rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      background: none; border: none;
+    }
+
+    /* ─── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .story-inner { grid-template-columns: 1fr; gap: 48px; }
+      .story-badge { right: 0; }
+      .process-steps { grid-template-columns: repeat(3, 1fr); gap: 32px; }
+      .process-steps::before { display: none; }
+      .cupping-inner { grid-template-columns: 1fr; gap: 48px; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .testimonials-grid { grid-template-columns: 1fr; gap: 16px; }
+      .brew-grid { grid-template-columns: repeat(2, 1fr); }
+      .origins-grid { grid-template-columns: repeat(3, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .products-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .nav { padding: 0 20px; }
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      .container { padding: 0 20px; }
+      .section-pad { padding: 72px 0; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .products-grid { grid-template-columns: 1fr; }
+      .process-steps { grid-template-columns: repeat(2, 1fr); }
+      .features-grid { grid-template-columns: 1fr; }
+      .testimonials-grid { grid-template-columns: 1fr; }
+      .brew-grid { grid-template-columns: 1fr 1fr; }
+      .origins-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient lights -->
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+  <div class="ambient ambient-3"></div>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Navigation">
+    <button class="mobile-close" id="mobileClose" aria-label="Close menu">✕</button>
+    <a href="#story" onclick="closeMobile()">Story</a>
+    <a href="#coffees" onclick="closeMobile()">Coffees</a>
+    <a href="#process" onclick="closeMobile()">Process</a>
+    <a href="#brew" onclick="closeMobile()">Brew</a>
+    <a href="#origins" onclick="closeMobile()">Origins</a>
+    <a href="#contact" onclick="closeMobile()">Contact</a>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
+    <div class="nav-logo">
+      <span class="nav-logo-dot"></span>
+      Driva Coffee
+    </div>
+    <ul class="nav-links">
+      <li><a href="#story">Story</a></li>
+      <li><a href="#coffees">Coffees</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#brew">Brew</a></li>
+      <li><a href="#origins">Origins</a></li>
+    </ul>
+    <a href="#contact" class="nav-cta">Order Now</a>
+    <div class="hamburger" id="hamburger" role="button" aria-label="Open menu" tabindex="0">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- ── HERO ───────────────────────────────────────────────── -->
+  <section class="hero" role="banner">
+    <div class="hero-bg"></div>
+    <div class="hero-img"></div>
+    <div class="hero-gradient-line"></div>
+    <div class="hero-content">
+      <p class="hero-eyebrow">Specialty Coffee · Single Origin · Direct Trade</p>
+      <h1 class="hero-title">From <em>Origin</em><br/>to Your Cup</h1>
+      <p class="hero-sub">
+        We source, process, and roast exceptional coffees from the world's finest growing regions —
+        each lot traceable, scored, and crafted with obsessive precision.
+      </p>
+      <div class="hero-actions">
+        <a href="#coffees" class="btn-primary">Explore Coffees</a>
+        <a href="#story" class="btn-ghost">Our Story</a>
+      </div>
+    </div>
+    <div class="hero-scroll" aria-hidden="true">
+      <span class="hero-scroll-text">Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ── STATS ─────────────────────────────────────────────── -->
+  <div class="stats" role="region" aria-label="Brand statistics">
+    <div class="stat-item reveal">
+      <div class="stat-num" data-count="87">87+</div>
+      <div class="stat-label">SCA Average Score</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-1">
+      <div class="stat-num">12</div>
+      <div class="stat-label">Origin Countries</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-2">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Direct Trade</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-3">
+      <div class="stat-num">2019</div>
+      <div class="stat-label">Est. Indonesia</div>
+    </div>
+  </div>
+
+  <!-- ── STORY ─────────────────────────────────────────────── -->
+  <section class="story section-pad" id="story" aria-labelledby="story-heading">
+    <div class="container">
+      <div class="story-inner">
+        <div class="story-visual reveal">
+          <div class="story-img-wrap">
+            <img
+              src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=900&q=80&auto=format&fit=crop"
+              alt="Coffee farmer examining cherries in the field"
+              loading="lazy"
+              width="600" height="750"
+            />
+            <div class="story-img-overlay"></div>
+          </div>
+          <div class="story-badge">
+            <div class="story-badge-num">2025</div>
+            <div class="story-badge-label">New Crop<br/>Coming Soon</div>
+          </div>
+        </div>
+        <div class="story-text">
+          <p class="eyebrow reveal">Our Story</p>
+          <h2 class="section-title reveal reveal-delay-1" id="story-heading">
+            Born from the<br/><em>Soil of Passion</em>
+          </h2>
+          <div class="divider reveal reveal-delay-2"></div>
+          <p class="story-body reveal reveal-delay-2">
+            Driva Coffee began as a commitment — not to volume, but to truth.
+            In the highlands of Indonesia and the valleys of East Africa, we partner directly
+            with farmers who share our belief: that great coffee is never an accident.
+          </p>
+          <p class="story-body reveal reveal-delay-3">
+            Every lot we release tells the story of a specific place, a specific harvest,
+            and the hands that tended it. We cup every batch rigorously — tracking aroma,
+            flavour, aftertaste, acidity, body, balance, and uniformity — before a single
+            gram leaves our facility.
+          </p>
+          <blockquote class="story-quote reveal reveal-delay-3">
+            "We don't sell coffee. We translate terroir — the whisper of soil, altitude,
+            and season — into every cup."
+          </blockquote>
+          <div class="story-tags reveal reveal-delay-4">
+            <span class="story-tag">Q-Grader Certified</span>
+            <span class="story-tag">SCA Member</span>
+            <span class="story-tag">Direct Trade</span>
+            <span class="story-tag">Carbon Neutral</span>
+            <span class="story-tag">Traceable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COFFEES (tabbed) ───────────────────────────────────── -->
+  <section class="tabs-section section-pad" id="coffees" aria-labelledby="coffees-heading">
+    <div class="container">
+      <div class="text-center" style="text-align:center; margin-bottom:48px;">
+        <p class="eyebrow reveal">Our Coffees</p>
+        <h2 class="section-title reveal reveal-delay-1" id="coffees-heading">
+          Exceptional <em>Single Origins</em>
+        </h2>
+        <div class="divider centered reveal reveal-delay-2"></div>
+      </div>
+
+      <!-- Tab navigation -->
+      <div class="tab-nav" role="tablist" aria-label="Coffee categories">
+        <button class="tab-btn active" role="tab" aria-selected="true"  aria-controls="tab-all"     id="btn-all"     onclick="switchTab('all')">All Lots</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-natural" id="btn-natural" onclick="switchTab('natural')">Natural</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-washed"  id="btn-washed"  onclick="switchTab('washed')">Washed</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-honey"   id="btn-honey"   onclick="switchTab('honey')">Honey</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-limited" id="btn-limited" onclick="switchTab('limited')">Limited</button>
+      </div>
+
+      <!-- All lots -->
+      <div class="tab-panel active" id="tab-all" role="tabpanel" aria-labelledby="btn-all">
+        <div class="products-grid">
+
+          <article class="product-card">
+            <p class="product-origin">Ethiopia · Yirgacheffe</p>
+            <h3 class="product-name">Gedeb Natural</h3>
+            <p class="product-process">Natural Process · 1900–2100m</p>
+            <div class="product-score">
+              <span class="product-score-num">91.5</span>
+              <span class="product-score-label">SCA points</span>
+            </div>
+            <p class="product-desc">
+              Intoxicating blueberry jam and jasmine on the nose, with a silky body
+              carrying wild strawberry, dark chocolate, and a long bergamot finish.
+            </p>
+            <div class="product-meta">
+              <span class="product-tag">Blueberry</span>
+              <span class="product-tag">Jasmine</span>
+              <span class="product-tag">Dark Choc</span>
+            </div>
+            <p class="product-price">From <strong>$24</strong> / 250g</p>
+            <a href="#contact" class="product-link">
+              Order
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+          </article>
+
+          <article class="product-card">
+            <p class="product-origin">Indonesia · Sumatra</p>
+            <h3 class="product-name">Mandheling Wet Hulled</h3>
+            <p class="product-process">Wet-Hulled · 1200–1600m</p>
+            <div class="product-score">
+              <span class="product-score-num">88.0</span>
+              <span class="product-score-label">SCA points</span>
+            </div>
+            <p class="product-desc">
+              Full-bodied and earthy with cedar, dark tobacco, and a lingering
+              herbal complexity. Bold, grounding, unmistakably Sumatran.
+            </p>
+            <div class="product-meta">
+              <span class="product-tag">Cedar</span>
+              <span class="product-tag">Tobacco</span>
+              <span class="product-tag">Herbal</span>
+            </div>
+            <p class="product-price">From <strong>$18</strong> / 250g</p>
+            <a href="#contact" class="product-link">
+              Order
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+          </article>
+
+          <article class="product-card">
+            <p class="product-origin">Kenya · Kirinyaga</p>
+            <h3 class="product-name">Karatu AA Washed</h3>
+            <p class="product-process">Washed · 1700–1850m</p>
+            <div class="product-score">
+              <span class="product-score-num">90.25</span>
+              <span class="product-score-label">SCA points</span>
+            </div>
+            <p class="product-desc">
+              Bright and vivid with blackcurrant, red grapefruit, and stone fruit.
+              Exceptional acidity and clean, resonant finish.
+            </p>
+            <div class="product-meta">
+              <span class="product-tag">Blackcurrant</span>
+              <span class="product-tag">Grapefruit</span>
+              <span class="product-tag">Plum</span>
+            </div>
+            <p class="product-price">From <strong>$26</strong> / 250g</p>
+            <a href="#contact" class="product-link">
+              Order
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+          </article>
+
+          <article class="product-card">
+            <p class="product-origin">Colombia · Huila</p>
+            <h3 class="product-name">La Esperanza Honey</h3>
+            <p class="product-process">Yellow Honey · 1650–1900m</p>
+            <div class="product-score">
+              <span class="product-score-num">89.75</span>
+              <span class="product-score-label">SCA points</span>
+            </div>
+            <p class="product-desc">
+              Sweet caramel and ripe peach with a velvety mouthfeel. Milk chocolate
+              mid-palate and a warm brown sugar finish that lingers gently.
+            </p>
+            <div class="product-meta">
+              <span class="product-tag">Caramel</span>
+              <span class="product-tag">Peach</span>
+              <span class="product-tag">Chocolate</span>
+            </div>
+            <p class="product-price">From <strong>$22</strong> / 250g</p>
+            <a href="#contact" class="product-link">
+              Order
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+          </article>
+
+          <article class="product-card">
+            <p class="product-origin">Rwanda · Nyungwe</p>
+            <h3 class="product-name">Gatare Washed</h3>
+            <p class="product-process">Washed · 1800–2000m</p>
+            <div class="product-score">
+              <span class="product-score-num">90.5</span>
+              <span class="product-score-label">SCA points</span>
+            </div>
+            <p class="product-desc">
+              Elegant and refined with hibiscus, white peach, and green apple.
+              Silky body and a distinctly bright, tea-like quality.
+            </p>
+            <div class="product-meta">
+              <span class="product-tag">Hibiscus</span>
+              <span class="product-tag">White Peach</span>
+              <span class="product-tag">Tea-like</span>
+            </div>
+            <p class="product-price">From <strong>$25</strong> / 250g</p>
+            <a href="#contact" class="product-link">
+              Order
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+          </article>
+
+          <article class="product-card">
+            <p class="product-origin">Guatemala · Antigua</p>
+            <h3 class="product-name">Hermosa Natural</h3>
+            <p class="product-process">Natural · 1500–1700m</p>
+            <div class="product-score">
+              <span class="product-score-num">88.5</span>
+              <span class="product-score-label">SCA points</span>
+            </div>
+            <p class="product-desc">
+              Generous dried cherry and walnut with smoky cocoa undertones. A
+              balanced, structured body with a warm, spice-tinged finish.
+            </p>
+            <div class="product-meta">
+              <span class="product-tag">Dried Cherry</span>
+              <span class="product-tag">Walnut</span>
+              <span class="product-tag">Cocoa</span>
+            </div>
+            <p class="product-price">From <strong>$20</strong> / 250g</p>
+            <a href="#contact" class="product-link">
+              Order
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- Natural tab -->
+      <div class="tab-panel" id="tab-natural" role="tabpanel" aria-labelledby="btn-natural">
+        <div class="products-grid">
+          <article class="product-card">
+            <p class="product-origin">Ethiopia · Yirgacheffe</p>
+            <h3 class="product-name">Gedeb Natural</h3>
+            <p class="product-process">Natural Process · 1900–2100m</p>
+            <div class="product-score"><span class="product-score-num">91.5</span><span class="product-score-label">SCA points</span></div>
+            <p class="product-desc">Intoxicating blueberry jam and jasmine on the nose, with a silky body carrying wild strawberry, dark chocolate, and a long bergamot finish.</p>
+            <div class="product-meta"><span class="product-tag">Blueberry</span><span class="product-tag">Jasmine</span><span class="product-tag">Dark Choc</span></div>
+            <p class="product-price">From <strong>$24</strong> / 250g</p>
+            <a href="#contact" class="product-link">Order <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </article>
+          <article class="product-card">
+            <p class="product-origin">Guatemala · Antigua</p>
+            <h3 class="product-name">Hermosa Natural</h3>
+            <p class="product-process">Natural · 1500–1700m</p>
+            <div class="product-score"><span class="product-score-num">88.5</span><span class="product-score-label">SCA points</span></div>
+            <p class="product-desc">Generous dried cherry and walnut with smoky cocoa undertones. Balanced and structured.</p>
+            <div class="product-meta"><span class="product-tag">Dried Cherry</span><span class="product-tag">Walnut</span><span class="product-tag">Cocoa</span></div>
+            <p class="product-price">From <strong>$20</strong> / 250g</p>
+            <a href="#contact" class="product-link">Order <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </article>
+        </div>
+      </div>
+
+      <!-- Washed tab -->
+      <div class="tab-panel" id="tab-washed" role="tabpanel" aria-labelledby="btn-washed">
+        <div class="products-grid">
+          <article class="product-card">
+            <p class="product-origin">Kenya · Kirinyaga</p>
+            <h3 class="product-name">Karatu AA Washed</h3>
+            <p class="product-process">Washed · 1700–1850m</p>
+            <div class="product-score"><span class="product-score-num">90.25</span><span class="product-score-label">SCA points</span></div>
+            <p class="product-desc">Bright and vivid with blackcurrant, red grapefruit, and stone fruit. Exceptional acidity and clean finish.</p>
+            <div class="product-meta"><span class="product-tag">Blackcurrant</span><span class="product-tag">Grapefruit</span><span class="product-tag">Plum</span></div>
+            <p class="product-price">From <strong>$26</strong> / 250g</p>
+            <a href="#contact" class="product-link">Order <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </article>
+          <article class="product-card">
+            <p class="product-origin">Rwanda · Nyungwe</p>
+            <h3 class="product-name">Gatare Washed</h3>
+            <p class="product-process">Washed · 1800–2000m</p>
+            <div class="product-score"><span class="product-score-num">90.5</span><span class="product-score-label">SCA points</span></div>
+            <p class="product-desc">Elegant and refined with hibiscus, white peach, and green apple. Silky body and tea-like quality.</p>
+            <div class="product-meta"><span class="product-tag">Hibiscus</span><span class="product-tag">White Peach</span><span class="product-tag">Tea-like</span></div>
+            <p class="product-price">From <strong>$25</strong> / 250g</p>
+            <a href="#contact" class="product-link">Order <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </article>
+        </div>
+      </div>
+
+      <!-- Honey tab -->
+      <div class="tab-panel" id="tab-honey" role="tabpanel" aria-labelledby="btn-honey">
+        <div class="products-grid">
+          <article class="product-card">
+            <p class="product-origin">Colombia · Huila</p>
+            <h3 class="product-name">La Esperanza Honey</h3>
+            <p class="product-process">Yellow Honey · 1650–1900m</p>
+            <div class="product-score"><span class="product-score-num">89.75</span><span class="product-score-label">SCA points</span></div>
+            <p class="product-desc">Sweet caramel and ripe peach with a velvety mouthfeel. Milk chocolate mid-palate and warm brown sugar finish.</p>
+            <div class="product-meta"><span class="product-tag">Caramel</span><span class="product-tag">Peach</span><span class="product-tag">Chocolate</span></div>
+            <p class="product-price">From <strong>$22</strong> / 250g</p>
+            <a href="#contact" class="product-link">Order <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </article>
+        </div>
+      </div>
+
+      <!-- Limited tab -->
+      <div class="tab-panel" id="tab-limited" role="tabpanel" aria-labelledby="btn-limited">
+        <div class="products-grid">
+          <article class="product-card" style="border-top: 2px solid var(--gold);">
+            <p class="product-origin" style="color: var(--gold-lt);">⚡ Limited · Indonesia · Flores</p>
+            <h3 class="product-name">Bajawa Anaerobic</h3>
+            <p class="product-process">Anaerobic Natural · 1300–1500m · 48kg Available</p>
+            <div class="product-score"><span class="product-score-num">92.0</span><span class="product-score-label">SCA points</span></div>
+            <p class="product-desc">An extraordinary micro-lot processed in sealed fermentation tanks for 96 hours. Explosive tropical fruit with fermented lychee, passion fruit, and a wine-like complexity that evolves as it cools.</p>
+            <div class="product-meta"><span class="product-tag">Lychee</span><span class="product-tag">Passionfruit</span><span class="product-tag">Winey</span></div>
+            <p class="product-price">From <strong>$38</strong> / 150g</p>
+            <a href="#contact" class="product-link">Request <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PROCESS ────────────────────────────────────────────── -->
+  <section class="process-bg section-pad" id="process" aria-labelledby="process-heading">
+    <div class="container">
+      <div class="process-header">
+        <p class="eyebrow reveal">How We Work</p>
+        <h2 class="section-title reveal reveal-delay-1" id="process-heading">
+          The <em>Craft</em> Behind Every Cup
+        </h2>
+        <div class="divider centered reveal reveal-delay-2"></div>
+      </div>
+      <div class="process-steps">
+        <div class="process-step reveal">
+          <div class="process-icon" aria-hidden="true">🌱</div>
+          <p class="process-step-num">01</p>
+          <h3 class="process-step-name">Cultivation</h3>
+          <p class="process-step-desc">Partner farmers practice shade-grown, hand-selected cherry harvesting at optimal ripeness.</p>
+        </div>
+        <div class="process-step reveal reveal-delay-1">
+          <div class="process-icon" aria-hidden="true">⚗️</div>
+          <p class="process-step-num">02</p>
+          <h3 class="process-step-name">Processing</h3>
+          <p class="process-step-desc">Natural, washed, honey, and anaerobic methods selected per lot to maximise its inherent character.</p>
+        </div>
+        <div class="process-step reveal reveal-delay-2">
+          <div class="process-icon" aria-hidden="true">☕</div>
+          <p class="process-step-num">03</p>
+          <h3 class="process-step-name">Cupping</h3>
+          <p class="process-step-desc">Every batch is SCA-scored by our Q-Graders before selection. Only 87+ point lots make the cut.</p>
+        </div>
+        <div class="process-step reveal reveal-delay-3">
+          <div class="process-icon" aria-hidden="true">🔥</div>
+          <p class="process-step-num">04</p>
+          <h3 class="process-step-name">Roasting</h3>
+          <p class="process-step-desc">Small-batch, profile-roasted to highlight each origin's finest qualities — never a house blend approach.</p>
+        </div>
+        <div class="process-step reveal reveal-delay-4">
+          <div class="process-icon" aria-hidden="true">📦</div>
+          <p class="process-step-num">05</p>
+          <h3 class="process-step-name">Delivery</h3>
+          <p class="process-step-desc">Nitrogen-flushed, valve-sealed packaging ships within 48 hours of roast for peak freshness.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CUPPING / QUALITY ───────────────────────────────────── -->
+  <section class="cupping section-pad" id="cupping" aria-labelledby="cupping-heading">
+    <div class="container">
+      <div class="cupping-inner">
+        <div>
+          <p class="eyebrow reveal">Quality Control</p>
+          <h2 class="section-title reveal reveal-delay-1" id="cupping-heading">
+            Scored to <em>Excellence</em>
+          </h2>
+          <div class="divider reveal reveal-delay-2"></div>
+          <p class="cupping-desc reveal reveal-delay-2">
+            The SCA cupping protocol is our quality language. Ten attributes, each scored 6–10,
+            combine to form a final score that determines whether a lot earns its place in our lineup.
+            We share full transparency reports with every purchase.
+          </p>
+          <p class="cupping-desc reveal reveal-delay-3">
+            Our minimum release standard is 87 points — the lower threshold of specialty coffee excellence.
+            Our limited lots often exceed 91. We publish the full cupping sheet so you can taste with context.
+          </p>
+          <div class="cupping-badge-row reveal reveal-delay-4">
+            <div class="cupping-badge">
+              <span class="cupping-badge-icon" aria-hidden="true">🏆</span>
+              Q-Grader Panel
+            </div>
+            <div class="cupping-badge">
+              <span class="cupping-badge-icon" aria-hidden="true">📋</span>
+              SCA Protocol
+            </div>
+            <div class="cupping-badge">
+              <span class="cupping-badge-icon" aria-hidden="true">🔍</span>
+              Full Transparency
+            </div>
+          </div>
+        </div>
+        <div class="cupping-scores reveal reveal-delay-2">
+          <div class="score-card">
+            <p class="score-category">Aroma</p>
+            <p class="score-value">8.75</p>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:87.5%"></div></div>
+          </div>
+          <div class="score-card">
+            <p class="score-category">Flavour</p>
+            <p class="score-value">8.50</p>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:85%"></div></div>
+          </div>
+          <div class="score-card">
+            <p class="score-category">Acidity</p>
+            <p class="score-value">8.25</p>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:82.5%"></div></div>
+          </div>
+          <div class="score-card">
+            <p class="score-category">Body</p>
+            <p class="score-value">8.00</p>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:80%"></div></div>
+          </div>
+          <div class="score-card">
+            <p class="score-category">Balance</p>
+            <p class="score-value">8.50</p>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:85%"></div></div>
+          </div>
+          <div class="score-card">
+            <p class="score-category">Overall</p>
+            <p class="score-value">8.75</p>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:87.5%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHY DRIVA (glass cards) ────────────────────────────── -->
+  <section class="section-pad" aria-labelledby="why-heading">
+    <div class="container">
+      <div style="text-align:center; margin-bottom:56px;">
+        <p class="eyebrow reveal">Why Driva</p>
+        <h2 class="section-title reveal reveal-delay-1" id="why-heading">
+          A Different Kind of <em>Roaster</em>
+        </h2>
+        <div class="divider centered reveal reveal-delay-2"></div>
+      </div>
+      <div class="features-grid">
+        <div class="glass-card reveal">
+          <div class="card-icon" aria-hidden="true">🌿</div>
+          <h3 class="card-title">Direct Trade</h3>
+          <p class="card-body">
+            We bypass intermediaries entirely. Our prices ensure farmers receive
+            30–50% above commodity market rates, building long-term relationships
+            and improving lives across our supply chain.
+          </p>
+        </div>
+        <div class="glass-card reveal reveal-delay-1">
+          <div class="card-icon" aria-hidden="true">🔬</div>
+          <h3 class="card-title">Scientific Precision</h3>
+          <p class="card-body">
+            Every roast is logged: inlet temperature, charge, rate of rise, first
+            crack time, development ratio. We replicate excellence consistently
+            and refine with each batch.
+          </p>
+        </div>
+        <div class="glass-card reveal reveal-delay-2">
+          <div class="card-icon" aria-hidden="true">📄</div>
+          <h3 class="card-title">Full Traceability</h3>
+          <p class="card-body">
+            Know your farmer, their altitude, their harvest date, their processing
+            method. We publish the complete provenance chain — from seed to your door.
+          </p>
+        </div>
+        <div class="glass-card reveal reveal-delay-3">
+          <div class="card-icon" aria-hidden="true">🌍</div>
+          <h3 class="card-title">Seasonal Releases</h3>
+          <p class="card-body">
+            We don't maintain year-round lots. We chase the world's harvests,
+            releasing coffees at peak freshness in limited quantities that
+            respect the rhythm of each origin.
+          </p>
+        </div>
+        <div class="glass-card reveal reveal-delay-4">
+          <div class="card-icon" aria-hidden="true">♻️</div>
+          <h3 class="card-title">Carbon Conscious</h3>
+          <p class="card-body">
+            Certified carbon-neutral roasting since 2023. Recyclable packaging,
+            offset freight emissions, and a commitment to zero landfill by 2026.
+          </p>
+        </div>
+        <div class="glass-card reveal reveal-delay-5">
+          <div class="card-icon" aria-hidden="true">🎓</div>
+          <h3 class="card-title">Education First</h3>
+          <p class="card-body">
+            Every order ships with a brew guide tuned to that specific lot —
+            grind size, ratio, temperature, and tasting notes to guide your
+            exploration.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BREW GUIDE ─────────────────────────────────────────── -->
+  <section class="section-pad-sm" id="brew" aria-labelledby="brew-heading"
+    style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="container">
+      <div style="text-align:center; margin-bottom:48px;">
+        <p class="eyebrow reveal">Brew Methods</p>
+        <h2 class="section-title reveal reveal-delay-1" id="brew-heading">
+          Brew <em>Better</em>
+        </h2>
+        <div class="divider centered reveal reveal-delay-2"></div>
+      </div>
+      <div class="brew-grid reveal">
+        <div class="brew-card">
+          <div class="brew-emoji" aria-hidden="true">🫗</div>
+          <h3 class="brew-name">Pour Over</h3>
+          <div class="brew-params">
+            <div class="brew-param"><span class="brew-param-label">Ratio</span><span class="brew-param-val">1:16</span></div>
+            <div class="brew-param"><span class="brew-param-label">Temp</span><span class="brew-param-val">93°C</span></div>
+            <div class="brew-param"><span class="brew-param-label">Grind</span><span class="brew-param-val">Medium</span></div>
+            <div class="brew-param"><span class="brew-param-label">Time</span><span class="brew-param-val">3:00–3:30</span></div>
+          </div>
+          <p class="brew-desc">Best for clarity and origin expression. Ideal for washed and natural lots.</p>
+        </div>
+        <div class="brew-card">
+          <div class="brew-emoji" aria-hidden="true">⚗️</div>
+          <h3 class="brew-name">AeroPress</h3>
+          <div class="brew-params">
+            <div class="brew-param"><span class="brew-param-label">Ratio</span><span class="brew-param-val">1:13</span></div>
+            <div class="brew-param"><span class="brew-param-label">Temp</span><span class="brew-param-val">85–90°C</span></div>
+            <div class="brew-param"><span class="brew-param-label">Grind</span><span class="brew-param-val">Med-Fine</span></div>
+            <div class="brew-param"><span class="brew-param-label">Time</span><span class="brew-param-val">2:00–2:30</span></div>
+          </div>
+          <p class="brew-desc">Versatile and forgiving. Produces a clean, concentrated cup.</p>
+        </div>
+        <div class="brew-card">
+          <div class="brew-emoji" aria-hidden="true">☕</div>
+          <h3 class="brew-name">Espresso</h3>
+          <div class="brew-params">
+            <div class="brew-param"><span class="brew-param-label">Ratio</span><span class="brew-param-val">1:2.5</span></div>
+            <div class="brew-param"><span class="brew-param-label">Temp</span><span class="brew-param-val">92–94°C</span></div>
+            <div class="brew-param"><span class="brew-param-label">Grind</span><span class="brew-param-val">Fine</span></div>
+            <div class="brew-param"><span class="brew-param-label">Time</span><span class="brew-param-val">25–30s</span></div>
+          </div>
+          <p class="brew-desc">Bold, syrupy, and intense. Recommend our fuller-bodied lots.</p>
+        </div>
+        <div class="brew-card">
+          <div class="brew-emoji" aria-hidden="true">🧊</div>
+          <h3 class="brew-name">Cold Brew</h3>
+          <div class="brew-params">
+            <div class="brew-param"><span class="brew-param-label">Ratio</span><span class="brew-param-val">1:8</span></div>
+            <div class="brew-param"><span class="brew-param-label">Temp</span><span class="brew-param-val">4°C</span></div>
+            <div class="brew-param"><span class="brew-param-label">Grind</span><span class="brew-param-val">Coarse</span></div>
+            <div class="brew-param"><span class="brew-param-label">Time</span><span class="brew-param-val">16–20 hrs</span></div>
+          </div>
+          <p class="brew-desc">Smooth, sweet, and low-acid. Perfect for fruit-forward naturals.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ORIGINS ────────────────────────────────────────────── -->
+  <section class="section-pad" id="origins" aria-labelledby="origins-heading">
+    <div class="container origins">
+      <div class="origins-header">
+        <p class="eyebrow reveal">Where We Source</p>
+        <h2 class="section-title reveal reveal-delay-1" id="origins-heading">
+          <em>Origins</em> We Trust
+        </h2>
+        <div class="divider centered reveal reveal-delay-2"></div>
+        <p class="reveal reveal-delay-3" style="color:var(--text-dim); max-width:520px; margin:0 auto; font-size:0.95rem; line-height:1.75;">
+          We work exclusively with regions where altitude, soil, and sustainable practice
+          converge to produce traceable specialty lots.
+        </p>
+      </div>
+      <div class="origins-grid">
+        <div class="origin-card reveal">
+          <div class="origin-flag" aria-hidden="true">🇪🇹</div>
+          <p class="origin-country">Ethiopia</p>
+          <p class="origin-region">Yirgacheffe, Guji, Sidama</p>
+          <p class="origin-flavor">Floral · Berry · Citrus</p>
+        </div>
+        <div class="origin-card reveal reveal-delay-1">
+          <div class="origin-flag" aria-hidden="true">🇮🇩</div>
+          <p class="origin-country">Indonesia</p>
+          <p class="origin-region">Sumatra, Flores, Java</p>
+          <p class="origin-flavor">Earthy · Herbal · Full Body</p>
+        </div>
+        <div class="origin-card reveal reveal-delay-2">
+          <div class="origin-flag" aria-hidden="true">🇰🇪</div>
+          <p class="origin-country">Kenya</p>
+          <p class="origin-region">Kirinyaga, Nyeri, Murang'a</p>
+          <p class="origin-flavor">Blackcurrant · Bright · Juicy</p>
+        </div>
+        <div class="origin-card reveal reveal-delay-3">
+          <div class="origin-flag" aria-hidden="true">🇨🇴</div>
+          <p class="origin-country">Colombia</p>
+          <p class="origin-region">Huila, Nariño, Cauca</p>
+          <p class="origin-flavor">Caramel · Fruit · Balanced</p>
+        </div>
+        <div class="origin-card reveal reveal-delay-4">
+          <div class="origin-flag" aria-hidden="true">🇷🇼</div>
+          <p class="origin-country">Rwanda</p>
+          <p class="origin-region">Nyungwe, Huye, Rubavu</p>
+          <p class="origin-flavor">Floral · Tea-like · Delicate</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TESTIMONIALS ───────────────────────────────────────── -->
+  <section class="section-pad-sm" style="background:var(--bg2); border-top:1px solid var(--border);" aria-labelledby="reviews-heading">
+    <div class="container">
+      <div style="text-align:center; margin-bottom:48px;">
+        <p class="eyebrow reveal">From Our Customers</p>
+        <h2 class="section-title reveal reveal-delay-1" id="reviews-heading">
+          What People Are <em>Tasting</em>
+        </h2>
+        <div class="divider centered reveal reveal-delay-2"></div>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal">
+          <p class="testimonial-stars" aria-label="5 stars">★★★★★</p>
+          <p class="testimonial-text">
+            "The Gedeb Natural is the most complex coffee I've ever experienced.
+            The blueberry note is unmistakeable even to my untrained palate."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" aria-hidden="true">AK</div>
+            <div>
+              <p class="testimonial-name">Arya Kumar</p>
+              <p class="testimonial-role">Home Barista · Singapore</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-1">
+          <p class="testimonial-stars" aria-label="5 stars">★★★★★</p>
+          <p class="testimonial-text">
+            "We serve Driva in our café and the transparency reports make it
+            easy to train staff. Customers ask about provenance and we can answer properly."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" aria-hidden="true">MC</div>
+            <div>
+              <p class="testimonial-name">Maria Chen</p>
+              <p class="testimonial-role">Café Owner · Jakarta</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-2">
+          <p class="testimonial-stars" aria-label="5 stars">★★★★★</p>
+          <p class="testimonial-text">
+            "The Karatu Washed from Kenya was a revelation. That blackcurrant
+            acidity is extraordinary. Already planning my next order."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" aria-hidden="true">JD</div>
+            <div>
+              <p class="testimonial-name">James Dutton</p>
+              <p class="testimonial-role">Coffee Enthusiast · Melbourne</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA BANNER ─────────────────────────────────────────── -->
+  <section class="cta-banner section-pad cta-border-top" id="contact">
+    <div class="cta-bg"></div>
+    <div class="container cta-content">
+      <p class="eyebrow reveal" style="text-align:center;">Ready to Order?</p>
+      <h2 class="cta-title reveal reveal-delay-1">
+        Start Your Journey<br/>to <em>Better Coffee</em>
+      </h2>
+      <p class="cta-sub reveal reveal-delay-2">
+        Subscribe to receive new lot announcements before they sell out,
+        or place a wholesale inquiry for your café or roastery.
+      </p>
+      <form class="reveal reveal-delay-3"
+            onsubmit="handleSubmit(event)"
+            style="max-width:480px; margin:0 auto; display:flex; gap:12px; flex-wrap:wrap;"
+            aria-label="Newsletter sign-up">
+        <div style="flex:1; min-width:220px; position:relative;">
+          <label for="email-input" class="sr-only">Email address</label>
+          <input
+            id="email-input"
+            type="email"
+            placeholder="your@email.com"
+            required
+            autocomplete="email"
+            style="
+              width:100%;
+              padding: 14px 18px;
+              background: rgba(255,255,255,0.06);
+              border: 1px solid var(--border2);
+              border-radius: 2px;
+              color: var(--text);
+              font-size: 0.9rem;
+              outline: none;
+              transition: border-color 0.25s;
+            "
+            onfocus="this.style.borderColor='var(--gold)'"
+            onblur="this.style.borderColor='var(--border2)'"
+          />
+        </div>
+        <button type="submit" class="btn-primary" style="flex-shrink:0;">
+          Get Notified
+        </button>
+      </form>
+      <p class="reveal reveal-delay-4" id="form-msg" style="margin-top:16px; font-size:0.85rem; color:var(--gold); text-align:center; opacity:0; transition:opacity 0.5s;"></p>
+      <div class="reveal reveal-delay-4" style="display:flex; gap:48px; justify-content:center; margin-top:56px; flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <p style="font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-mute); margin-bottom:6px;">Email</p>
+          <a href="mailto:hello@drivacoffee.com" style="font-size:0.9rem; color:var(--gold); text-decoration:underline; text-underline-offset:3px;">hello@drivacoffee.com</a>
+        </div>
+        <div style="text-align:center;">
+          <p style="font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-mute); margin-bottom:6px;">Instagram</p>
+          <a href="https://instagram.com/drivacoffee" style="font-size:0.9rem; color:var(--gold);">@drivacoffee</a>
+        </div>
+        <div style="text-align:center;">
+          <p style="font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-mute); margin-bottom:6px;">Based in</p>
+          <span style="font-size:0.9rem; color:var(--text-dim);">Indonesia 🇮🇩</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ─────────────────────────────────────────────── -->
+  <footer role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <p class="footer-logo">Driva Coffee</p>
+          <p class="footer-tagline">
+            Specialty coffee sourced with intention, roasted with precision,
+            and shared with full transparency.
+          </p>
+          <div class="footer-social">
+            <a href="https://instagram.com/agintoro" class="social-btn" aria-label="Instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+            </a>
+            <a href="#" class="social-btn" aria-label="TikTok">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.93a8.2 8.2 0 004.79 1.52V7.01a4.87 4.87 0 01-1.02-.32z"/></svg>
+            </a>
+          </div>
+        </div>
+        <div>
+          <p class="footer-col-title">Coffees</p>
+          <ul class="footer-links">
+            <li><a href="#coffees">All Lots</a></li>
+            <li><a href="#coffees">Natural Process</a></li>
+            <li><a href="#coffees">Washed Process</a></li>
+            <li><a href="#coffees">Honey Process</a></li>
+            <li><a href="#coffees">Limited Releases</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer-col-title">Learn</p>
+          <ul class="footer-links">
+            <li><a href="#story">Our Story</a></li>
+            <li><a href="#process">Our Process</a></li>
+            <li><a href="#brew">Brew Guides</a></li>
+            <li><a href="#origins">Origins</a></li>
+            <li><a href="#cupping">Cupping Scores</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="footer-col-title">Company</p>
+          <ul class="footer-links">
+            <li><a href="#contact">Wholesale</a></li>
+            <li><a href="#contact">Press</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms</a></li>
+            <li><a href="mailto:hello@drivacoffee.com">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">© 2025 Driva Coffee. All rights reserved.</p>
+        <div class="footer-bottom-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Sitemap</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- visually-hidden utility -->
+  <style>
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+
+  <script>
+    /* ── Nav scroll effect ──────────────────────────────────── */
+    const nav = document.getElementById('mainNav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive: true });
+
+    /* ── Mobile menu ────────────────────────────────────────── */
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileClose = document.getElementById('mobileClose');
+    hamburger.addEventListener('click', () => { mobileMenu.classList.add('open'); document.body.style.overflow='hidden'; });
+    mobileClose.addEventListener('click', closeMobile);
+    hamburger.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') hamburger.click(); });
+    function closeMobile() { mobileMenu.classList.remove('open'); document.body.style.overflow=''; }
+
+    /* ── Tabs ───────────────────────────────────────────────── */
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const active = b.id === 'btn-' + name;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active);
+      });
+      document.querySelectorAll('.tab-panel').forEach(p => {
+        p.classList.toggle('active', p.id === 'tab-' + name);
+      });
+    }
+
+    /* ── Scroll reveal ──────────────────────────────────────── */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    /* ── Newsletter form ────────────────────────────────────── */
+    function handleSubmit(e) {
+      e.preventDefault();
+      const msg = document.getElementById('form-msg');
+      msg.textContent = '✓ You\'re on the list. We\'ll be in touch when the next lot drops.';
+      msg.style.opacity = '1';
+      e.target.reset();
+      setTimeout(() => { msg.style.opacity = '0'; }, 6000);
+    }
+
+    /* ── Subtle parallax on hero bg ─────────────────────────── */
+    const heroBg = document.querySelector('.hero-img');
+    if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        if (y < window.innerHeight) {
+          heroBg.style.transform = `translateY(${y * 0.25}px)`;
+        }
+      }, { passive: true });
+    }
+  </script>
+</body>
+</html>
