@@ -1199,8 +1199,7 @@ async function saveCupping() {
   };
   lastResult = payload;
 
-  // Save via REST API — reliable, gives real HTTP codes, no silent hangs
-  // Wait for auth max 8s
+  // Wait for Firebase auth to resolve (max 8s)
   if (!window._firebaseReady) {
     await new Promise(r => {
       document.addEventListener('firebase-ready', r, { once: true });
@@ -1209,25 +1208,11 @@ async function saveCupping() {
   }
 
   try {
-    const user = firebase.auth().currentUser;
-    const token = user ? await user.getIdToken() : null;
-    const url = 'https://driva-data-default-rtdb.asia-southeast1.firebasedatabase.app/cuppings.json'
-              + (token ? '?auth=' + token : '');
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const txt = await resp.text();
-    if (resp.ok) {
-      showToast('✓ Saved to Firebase');
-    } else {
-      console.error('[Driva] REST error', resp.status, txt);
-      showToast('Save error ' + resp.status + ': ' + txt.substring(0, 50));
-    }
+    await window._db.ref('cuppings').push(payload);
+    showToast('✓ Saved to Firebase');
   } catch (e) {
-    console.error('[Driva] Network error:', e.message);
-    showToast('Network error: ' + e.message.substring(0, 50));
+    console.error('[Driva] Save error:', e.message);
+    showToast('Save error: ' + (e.code || e.message).substring(0, 60));
   }
 
   btn.classList.remove('loading');
