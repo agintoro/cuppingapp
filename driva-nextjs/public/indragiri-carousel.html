@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indragiri Classic Washed — DRIVA Carousel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111111;
+    --paper:#f7f3ea;
+    --warm:#d8d0bf;
+    --card:#ffffff;
+    --line:#e7dfd0;
+    --muted:#6b665d;
+    --fill:#fffaf1;
+    --amber:#8a5a12;
+    --amber-soft:#fae7bf;
+    --paper-muted:#c8c1b5;
+    --paper-dim:#b9b1a4;
+    --font:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font);
+    background:#1a1815;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ---------- Viewer ---------- */
+  .viewer{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .frame{
+    width:1080px;
+    height:1350px;
+    overflow:hidden;
+    position:relative;
+    transform-origin:center center;
+    box-shadow:0 40px 120px rgba(0,0,0,0.55);
+    background:var(--ink);
+  }
+  .track{
+    display:flex;
+    width:4320px;
+    height:1350px;
+    transition:transform .5s cubic-bezier(.7,0,.2,1);
+  }
+
+  /* ---------- Slide base ---------- */
+  .slide{
+    width:1080px;
+    height:1350px;
+    position:relative;
+    overflow:hidden;
+    padding:92px 96px 80px;
+    display:flex;
+    flex-direction:column;
+  }
+  .slide.ink{ background:var(--ink); color:var(--paper); }
+  .slide.cream{ background:var(--paper); color:var(--ink); }
+
+  /* Giant ghosted editorial index numeral */
+  .ghost{
+    position:absolute;
+    font-weight:900;
+    font-size:760px;
+    line-height:0.7;
+    letter-spacing:-0.06em;
+    bottom:-150px;
+    right:-40px;
+    pointer-events:none;
+    user-select:none;
+    z-index:0;
+  }
+  .ink .ghost{ color:rgba(247,243,234,0.045); }
+  .cream .ghost{ color:rgba(17,17,17,0.035); }
+
+  .slide > *{ position:relative; z-index:1; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+  }
+  .eyebrow{
+    font-weight:900;
+    font-size:19px;
+    letter-spacing:0.24em;
+    text-transform:uppercase;
+  }
+  .ink .eyebrow{ color:var(--paper-dim); }
+  .cream .eyebrow{ color:var(--muted); }
+  .index{
+    font-weight:900;
+    font-size:18px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+  }
+  .ink .index{ color:var(--paper-dim); }
+  .cream .index{ color:var(--muted); }
+  .index b{ color:inherit; }
+  .ink .index .cur{ color:var(--amber-soft); }
+  .cream .index .cur{ color:var(--amber); }
+
+  /* ---------- Kicker (amber locator) ---------- */
+  .kicker{
+    font-weight:900;
+    font-size:20px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+  }
+  .ink .kicker{ color:var(--amber-soft); }
+  .cream .kicker{ color:var(--amber); }
+
+  /* ---------- Titles ---------- */
+  .title{
+    font-weight:900;
+    letter-spacing:-0.06em;
+    line-height:0.93;
+  }
+  .t-xl{ font-size:118px; }
+  .t-lg{ font-size:96px; }
+  .t-md{ font-size:78px; }
+
+  /* ---------- Rule ---------- */
+  .rule{
+    width:96px;
+    height:6px;
+    border-radius:999px;
+  }
+  .ink .rule{ background:var(--amber-soft); }
+  .cream .rule{ background:var(--amber); }
+
+  /* ---------- Body ---------- */
+  .body{
+    font-weight:500;
+    font-size:31px;
+    line-height:1.5;
+    max-width:780px;
+    text-wrap:pretty;
+  }
+  .ink .body{ color:var(--paper-muted); }
+  .cream .body{ color:#3a362f; }
+  .body em{
+    font-style:normal;
+    font-weight:800;
+  }
+  .ink .body em{ color:var(--paper); }
+  .cream .body em{ color:var(--ink); }
+
+  /* ---------- Stat hero ---------- */
+  .stat-label{
+    font-weight:800;
+    font-size:16px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .stat{
+    display:flex;
+    align-items:baseline;
+    gap:18px;
+    font-weight:900;
+    letter-spacing:-0.05em;
+    line-height:0.9;
+  }
+  .stat .num{ font-size:106px; }
+  .stat .unit{
+    font-size:38px;
+    font-weight:900;
+    letter-spacing:0.02em;
+    color:var(--amber);
+  }
+
+  /* ---------- Micro tiles ---------- */
+  .tiles{
+    display:flex;
+    gap:16px;
+  }
+  .tile{
+    flex:1;
+    background:var(--fill);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:24px 22px 26px;
+  }
+  .tile .tnum{
+    font-weight:900;
+    font-size:16px;
+    letter-spacing:0.16em;
+    color:var(--amber);
+    margin-bottom:14px;
+  }
+  .tile .ttxt{
+    font-weight:800;
+    font-size:25px;
+    letter-spacing:-0.02em;
+    color:var(--ink);
+    line-height:1.05;
+  }
+
+  /* ---------- Key idea pull ---------- */
+  .keyidea{
+    display:flex;
+    gap:22px;
+  }
+  .keyidea .bar{
+    width:6px;
+    border-radius:999px;
+    flex:0 0 6px;
+  }
+  .ink .keyidea .bar{ background:var(--amber-soft); }
+  .cream .keyidea .bar{ background:var(--amber); }
+  .keyidea .ki-label{
+    font-weight:900;
+    font-size:15px;
+    letter-spacing:0.24em;
+    text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .ink .keyidea .ki-label{ color:var(--paper-dim); }
+  .cream .keyidea .ki-label{ color:var(--muted); }
+  .keyidea .ki-text{
+    font-weight:800;
+    font-size:32px;
+    line-height:1.22;
+    letter-spacing:-0.025em;
+    max-width:700px;
+    text-wrap:pretty;
+  }
+  .ink .keyidea .ki-text{ color:var(--paper); }
+  .cream .keyidea .ki-text{ color:var(--ink); }
+
+  /* ---------- Hook three-word punch ---------- */
+  .punch{
+    font-weight:900;
+    font-size:62px;
+    line-height:1.05;
+    letter-spacing:-0.05em;
+  }
+  .ink .punch .a{ color:var(--paper); }
+  .ink .punch .b{ color:var(--amber-soft); }
+
+  /* ---------- Closing manifesto ---------- */
+  .manifesto{
+    font-weight:800;
+    font-size:39px;
+    line-height:1.24;
+    letter-spacing:-0.035em;
+    max-width:840px;
+    text-wrap:balance;
+  }
+  .divider{
+    height:1px;
+    width:100%;
+    background:rgba(255,255,255,0.13);
+    margin-bottom:30px;
+  }
+  .manifesto .hl{ color:var(--amber-soft); }
+
+  /* ---------- Brand lockup (pinned footer, bottom-right) ---------- */
+  .footer{
+    padding-top:28px;
+    display:flex;
+    justify-content:flex-end;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    z-index:2;
+  }
+  .brand .mark{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    font-size:28px;
+    letter-spacing:-0.04em;
+    flex:0 0 46px;
+  }
+  .ink .brand .mark{ background:var(--paper); color:var(--ink); }
+  .cream .brand .mark{ background:var(--ink); color:var(--paper); }
+  .brand .lock{ display:flex; flex-direction:column; line-height:1; }
+  .brand .word{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.02em;
+  }
+  .brand .handle{
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:0.08em;
+    margin-top:5px;
+  }
+  .ink .brand .word{ color:var(--paper); }
+  .ink .brand .handle{ color:var(--paper-dim); }
+  .cream .brand .word{ color:var(--ink); }
+  .cream .brand .handle{ color:var(--muted); }
+
+  /* spacer utility */
+  .grow{ flex:1 1 auto; }
+  .gap-sm{ height:22px; }
+  .gap-md{ height:34px; }
+  .gap-lg{ height:48px; }
+
+  /* ---------- Nav chrome ---------- */
+  .nav{
+    position:fixed;
+    top:50%;
+    transform:translateY(-50%);
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    border:none;
+    background:rgba(247,243,234,0.10);
+    color:var(--paper);
+    font-size:22px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    transition:background .16s ease;
+    backdrop-filter:blur(2px);
+  }
+  .nav:hover{ background:rgba(247,243,234,0.2); }
+  .nav:disabled{ opacity:0.25; cursor:default; }
+  .nav.prev{ left:28px; }
+  .nav.next{ right:28px; }
+
+  .dots{
+    position:fixed;
+    bottom:26px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:10px;
+    z-index:50;
+  }
+  .dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:rgba(247,243,234,0.28);
+    cursor:pointer;
+    transition:all .2s ease;
+    border:none;
+    padding:0;
+  }
+  .dot.active{ background:var(--paper); width:28px; border-radius:999px; }
+
+  .counter{
+    position:fixed;
+    top:24px;
+    left:50%;
+    transform:translateX(-50%);
+    font-weight:800;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:rgba(247,243,234,0.5);
+    z-index:50;
+  }
+</style>
+</head>
+<body>
+  <div class="viewer">
+    <div class="frame" id="frame">
+      <div class="track" id="track">
+
+        <!-- ===================== SLIDE 1 — HOOK (INK) ===================== -->
+        <section class="slide ink" data-screen-label="01">
+          <div class="ghost">01</div>
+          <div class="topbar">
+            <div class="eyebrow">DRIVA · Single Lot Series</div>
+            <div class="index"><span class="cur">01</span> / 04</div>
+          </div>
+
+          <div class="grow"></div>
+
+          <div class="kicker">Rancabali · South Bandung</div>
+          <div class="gap-md"></div>
+          <h1 class="title t-xl">Indragiri<br>Classic&nbsp;Washed</h1>
+          <div class="gap-md"></div>
+          <div class="rule"></div>
+          <div class="gap-md"></div>
+          <p class="body">A high-altitude washed coffee from West Java, grown at <em>1,600–1,800&nbsp;MASL</em>.</p>
+
+          <div class="gap-lg"></div>
+
+          <div class="punch"><span class="a">Clean.</span> <span class="a">Structured.</span><br><span class="b">Terroir-driven.</span></div>
+
+          <div class="footer">
+            <div class="brand">
+              <div class="mark">D</div>
+              <div class="lock"><span class="word">DRIVA</span><span class="handle">@DRIVA.COFFEE</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== SLIDE 2 — TERROIR (CREAM) ===================== -->
+        <section class="slide cream" data-screen-label="02">
+          <div class="ghost">02</div>
+          <div class="topbar">
+            <div class="eyebrow">Terroir</div>
+            <div class="index"><span class="cur">02</span> / 04</div>
+          </div>
+
+          <div class="gap-lg"></div>
+          <h2 class="title t-lg">Built by<br>Altitude</h2>
+          <div class="gap-md"></div>
+          <div class="rule"></div>
+          <div class="gap-md"></div>
+          <p class="body">Slow cherry ripening at altitude builds <em>denser seeds</em>, refined acidity, and layered sweetness.</p>
+
+          <div class="grow"></div>
+
+          <div>
+            <div class="stat-label">Estate Elevation</div>
+            <div class="stat"><span class="num">1,600–1,800</span><span class="unit">MASL</span></div>
+          </div>
+
+          <div class="gap-lg"></div>
+
+          <div class="keyidea">
+            <div class="bar"></div>
+            <div>
+              <div class="ki-label">The Idea</div>
+              <div class="ki-text">It starts with the mountain — not the process.</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div class="brand">
+              <div class="mark">D</div>
+              <div class="lock"><span class="word">DRIVA</span><span class="handle">@DRIVA.COFFEE</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== SLIDE 3 — FARM ECOSYSTEM (CREAM) ===================== -->
+        <section class="slide cream" data-screen-label="03">
+          <div class="ghost">03</div>
+          <div class="topbar">
+            <div class="eyebrow">Farm Ecosystem</div>
+            <div class="index"><span class="cur">03</span> / 04</div>
+          </div>
+
+          <div class="gap-lg"></div>
+          <h2 class="title t-md">Shade-Grown,<br>Chemical-Free</h2>
+          <div class="gap-md"></div>
+          <div class="rule"></div>
+          <div class="gap-md"></div>
+          <p class="body">Grown under a natural shade ecosystem and farmed <em>without chemical fertilizers</em> — building soil that ripens cherry evenly.</p>
+
+          <div class="gap-lg"></div>
+
+          <div class="tiles">
+            <div class="tile"><div class="tnum">01</div><div class="ttxt">Healthier<br>soil</div></div>
+            <div class="tile"><div class="tnum">02</div><div class="ttxt">Stable<br>ripening</div></div>
+            <div class="tile"><div class="tnum">03</div><div class="ttxt">Cleaner<br>cup</div></div>
+          </div>
+
+          <div class="grow"></div>
+
+          <div class="keyidea">
+            <div class="bar"></div>
+            <div>
+              <div class="ki-label">The Idea</div>
+              <div class="ki-text">Better farming gives processing a stronger foundation.</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div class="brand">
+              <div class="mark">D</div>
+              <div class="lock"><span class="word">DRIVA</span><span class="handle">@DRIVA.COFFEE</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== SLIDE 4 — DRYING + CLOSE (INK) ===================== -->
+        <section class="slide ink" data-screen-label="04">
+          <div class="ghost">04</div>
+          <div class="topbar">
+            <div class="eyebrow">Controlled Drying</div>
+            <div class="index"><span class="cur">04</span> / 04</div>
+          </div>
+
+          <div class="gap-lg"></div>
+          <h2 class="title t-md">Precision<br>After Washing</h2>
+          <div class="gap-md"></div>
+          <div class="rule"></div>
+          <div class="gap-md"></div>
+          <p class="body">After washing, drying is held steady with a <em>wireless greenhouse thermometer</em> and a dehumidifier — managing temperature and humidity.</p>
+
+          <div class="gap-md"></div>
+
+          <div class="keyidea">
+            <div class="bar"></div>
+            <div>
+              <div class="ki-label">The Result</div>
+              <div class="ki-text">Cleaner aromatics. Better stability. A polished finish.</div>
+            </div>
+          </div>
+
+          <div class="grow"></div>
+
+          <div class="divider"></div>
+          <p class="manifesto">Not simple washed coffee. <span class="hl">Terroir, discipline, and drying precision</span> — in one cup.</p>
+
+          <div class="footer">
+            <div class="brand">
+              <div class="mark">D</div>
+              <div class="lock"><span class="word">DRIVA</span><span class="handle">@DRIVA.COFFEE</span></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <button class="nav prev" id="prev" aria-label="Previous">‹</button>
+  <button class="nav next" id="next" aria-label="Next">›</button>
+  <div class="counter" id="counter">Swipe · 01 / 04</div>
+  <div class="dots" id="dots"></div>
+
+<script>
+  (function(){
+    var N = 4;
+    var i = 0;
+    try { var saved = parseInt(localStorage.getItem('driva-carousel-idx'),10); if(!isNaN(saved)) i = Math.max(0,Math.min(N-1,saved)); } catch(e){}
+
+    var track = document.getElementById('track');
+    var prev = document.getElementById('prev');
+    var next = document.getElementById('next');
+    var counter = document.getElementById('counter');
+    var dotsWrap = document.getElementById('dots');
+
+    var dots = [];
+    for(var d=0; d<N; d++){
+      (function(idx){
+        var b = document.createElement('button');
+        b.className = 'dot';
+        b.addEventListener('click', function(){ go(idx); });
+        dotsWrap.appendChild(b);
+        dots.push(b);
+      })(d);
+    }
+
+    function pad(n){ return (n<10?'0':'')+n; }
+
+    function render(){
+      track.style.transform = 'translateX(' + (-i*1080) + 'px)';
+      prev.disabled = (i===0);
+      next.disabled = (i===N-1);
+      counter.textContent = 'Swipe · ' + pad(i+1) + ' / 0' + N;
+      for(var k=0;k<dots.length;k++){ dots[k].className = 'dot' + (k===i?' active':''); }
+      try { localStorage.setItem('driva-carousel-idx', i); } catch(e){}
+    }
+    function go(n){ i = Math.max(0,Math.min(N-1,n)); render(); }
+
+    prev.addEventListener('click', function(){ go(i-1); });
+    next.addEventListener('click', function(){ go(i+1); });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='ArrowRight') go(i+1);
+      else if(e.key==='ArrowLeft') go(i-1);
+    });
+
+    // touch / drag swipe
+    var sx=null;
+    var fr = document.getElementById('frame');
+    fr.addEventListener('touchstart', function(e){ sx = e.touches[0].clientX; }, {passive:true});
+    fr.addEventListener('touchend', function(e){
+      if(sx===null) return;
+      var dx = e.changedTouches[0].clientX - sx;
+      if(Math.abs(dx)>50){ go(dx<0 ? i+1 : i-1); }
+      sx=null;
+    });
+
+    // scale frame to viewport
+    function fit(){
+      var s = Math.min(window.innerWidth/1080, window.innerHeight/1350);
+      document.getElementById('frame').style.transform = 'scale(' + s + ')';
+    }
+    window.addEventListener('resize', fit);
+    fit();
+    render();
+  })();
+</script>
+</body>
+</html>
