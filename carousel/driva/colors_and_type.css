@@ -1,0 +1,226 @@
+/* ============================================================
+   DRIVA Design System — Colors & Type
+   Source of truth derived from drivaos2/style.css
+   ============================================================ */
+
+/* ---- Webfont ----------------------------------------------- */
+/* Inter is loaded from Google Fonts. If you ship offline,
+   drop the WOFF2 in /fonts and override these @font-face rules. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+:root {
+
+  /* ---------------------------------------------------------- */
+  /* COLOR — base palette                                       */
+  /* ---------------------------------------------------------- */
+
+  /* Ink — primary foreground, "Driva black" */
+  --driva-ink:       #111111;
+  /* Paper — primary light surface, slight cream */
+  --driva-paper:     #f7f3ea;
+  /* Warm — page background, dustier than paper */
+  --driva-warm:      #d8d0bf;
+  /* Card — pure white, used on warm or paper bg */
+  --driva-card:      #ffffff;
+  /* Line — hairline border, hairline beige */
+  --driva-line:      #e7dfd0;
+  /* Muted — secondary type, label/eyebrow */
+  --driva-muted:     #6b665d;
+  /* Field — input fill, warmer than card */
+  --driva-field:     #fffaf1;
+  /* Tint — pale clay, used on micro-stat tiles */
+  --driva-tint:      #f5f0e7;
+
+  /* Status accents (used on badges + detail micro UI) */
+  --driva-amber:     #8a5a12;
+  --driva-amber-bg:  #fae7bf;
+  --driva-green:     #17633a;
+  --driva-green-bg:  #dff3e8;
+  --driva-red:       #8b1f1f;
+  --driva-red-bg:    #fde1dd;
+
+  /* Dark variants — used inside ink surfaces (lot card selected, hero) */
+  --driva-on-ink:        #f7f3ea;      /* paper-on-ink type */
+  --driva-on-ink-muted:  #c8c1b5;      /* dim type on ink */
+  --driva-on-ink-tint:   rgba(255,255,255,.12); /* card-on-ink micro tile */
+
+  /* Translucent layers — built directly on warm bg */
+  --driva-veil:      rgba(255,255,255,.45);
+  --driva-veil-soft: rgba(255,255,255,.55);
+
+  /* ---------------------------------------------------------- */
+  /* COLOR — semantic                                           */
+  /* ---------------------------------------------------------- */
+  --color-bg:           var(--driva-warm);
+  --color-surface:      var(--driva-card);
+  --color-surface-alt:  var(--driva-paper);
+  --color-surface-ink:  var(--driva-ink);
+  --color-fg:           var(--driva-ink);
+  --color-fg-muted:     var(--driva-muted);
+  --color-fg-on-ink:    var(--driva-on-ink);
+  --color-border:       var(--driva-line);
+  --color-field-bg:     var(--driva-field);
+
+  --color-status-fermenting-bg: var(--driva-ink);
+  --color-status-fermenting-fg: var(--driva-paper);
+  --color-status-drying-bg:     var(--driva-amber-bg);
+  --color-status-drying-fg:     var(--driva-amber);
+  --color-status-resting-bg:    var(--driva-green-bg);
+  --color-status-resting-fg:    var(--driva-green);
+  --color-status-draft-bg:      #eeeeee;
+  --color-status-draft-fg:      #333333;
+
+  /* ---------------------------------------------------------- */
+  /* SHADOW + ELEVATION                                         */
+  /* ---------------------------------------------------------- */
+  --shadow-card:  0 18px 45px rgba(17, 17, 17, 0.10);
+  --shadow-focus: 0 0 0 3px rgba(17, 17, 17, 0.08);
+  --shadow-flat:  none;
+
+  /* ---------------------------------------------------------- */
+  /* RADIUS — pillowy, generous                                 */
+  /* ---------------------------------------------------------- */
+  --radius-pill:  999px;
+  --radius-xs:    14px;  /* badge inner, small chip       */
+  --radius-sm:    18px;  /* button, input, field          */
+  --radius-md:    22px;  /* search box, micro tiles       */
+  --radius-lg:    26px;  /* summary card                  */
+  --radius-xl:    28px;  /* hero panel, ph panel          */
+  --radius-2xl:   30px;  /* lot card                      */
+  --radius-3xl:   32px;  /* form/detail outer card        */
+
+  /* ---------------------------------------------------------- */
+  /* SPACING — coarse 4-step ramp                               */
+  /* ---------------------------------------------------------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3: 10px;
+  --space-4: 12px;
+  --space-5: 14px;
+  --space-6: 16px;
+  --space-7: 18px;
+  --space-8: 20px;
+  --space-9: 22px;
+  --space-10: 28px;
+
+  /* ---------------------------------------------------------- */
+  /* TYPE — families                                            */
+  /* ---------------------------------------------------------- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
+               BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---------------------------------------------------------- */
+  /* TYPE — weights                                             */
+  /* Driva runs HEAVY — 850/900/950 are common.                 */
+  /* ---------------------------------------------------------- */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-bold:     700;
+  --weight-heavy:    850;   /* tabs, lot subtext            */
+  --weight-black:    900;   /* eyebrow, button, badge       */
+  --weight-ultra:    950;   /* h1 D-mark, lot title         */
+
+  /* ---------------------------------------------------------- */
+  /* TYPE — fluid sizes                                         */
+  /* ---------------------------------------------------------- */
+  --fs-display: clamp(32px, 7vw, 58px);  /* h1 */
+  --fs-h2:      24px;
+  --fs-h3:      22px;
+  --fs-stat:    28px;
+  --fs-body:    16px;
+  --fs-small:   14px;
+  --fs-meta:    13px;
+  --fs-label:   12px;
+  --fs-eyebrow: 11px;
+  --fs-micro:   10px;
+
+  /* Tracking */
+  --tracking-display: -0.06em;
+  --tracking-h2:      -0.03em;
+  --tracking-stat:    -0.05em;
+  --tracking-tight:   -0.04em;
+  --tracking-eyebrow:  0.24em;
+  --tracking-id:       0.18em;
+  --tracking-label:    0.12em;
+}
+
+/* ============================================================
+   Base — set on body of any Driva surface
+   ============================================================ */
+.driva-base {
+  font-family: var(--font-sans);
+  color: var(--color-fg);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Semantic type classes — apply to elements directly.
+   These are the "h1, h2, eyebrow, body" of the system.
+   ============================================================ */
+
+.driva-display {
+  font-size: var(--fs-display);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
+  font-weight: var(--weight-ultra);
+  margin: 0;
+}
+
+.driva-h2 {
+  font-size: var(--fs-h2);
+  letter-spacing: var(--tracking-h2);
+  font-weight: var(--weight-ultra);
+  margin: 0;
+}
+
+.driva-h3 {
+  font-size: var(--fs-h3);
+  letter-spacing: var(--tracking-h2);
+  font-weight: var(--weight-ultra);
+  margin: 0;
+}
+
+.driva-stat {
+  font-size: var(--fs-stat);
+  letter-spacing: var(--tracking-stat);
+  font-weight: var(--weight-ultra);
+}
+
+.driva-eyebrow {
+  font-size: var(--fs-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  font-weight: var(--weight-black);
+  color: var(--color-fg-muted);
+  margin: 0 0 6px;
+}
+
+.driva-label {
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  font-weight: var(--weight-heavy);
+  color: var(--color-fg-muted);
+}
+
+.driva-id {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-id);
+  font-weight: var(--weight-black);
+  color: var(--color-fg-muted);
+}
+
+.driva-body {
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  font-weight: var(--weight-regular);
+}
+
+.driva-meta {
+  font-size: var(--fs-meta);
+  color: var(--color-fg-muted);
+  font-weight: var(--weight-regular);
+}
